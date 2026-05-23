@@ -1,0 +1,28 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}Supprimer Réservation - Admin{% endblock %}
+{% block page_title %}Supprimer une réservation{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+  <div class="bg-dark-800 rounded-2xl border border-red-500/20 p-8 text-center">
+    <div class="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-trash text-red-400 text-xl"></i>
+    </div>
+    <h2 class="text-white font-bold text-xl mb-2">Confirmer la suppression</h2>
+    <p class="text-gray-400 mb-1">Réservation <span class="text-white font-bold">#{{ reservation.pk }}</span></p>
+    <p class="text-gray-400 mb-1">Client : <span class="text-white">{{ reservation.client_name }}</span></p>
+    <p class="text-gray-400 mb-6">Véhicule : <span class="text-white">{{ reservation.car }}</span></p>
+    <div class="flex gap-3">
+      <a href="{% url 'admin_reservation_list' %}" class="flex-1 py-3 rounded-xl font-bold text-sm border border-gray-600 text-gray-300 hover:border-gray-400 transition-all">
+        Annuler
+      </a>
+      <form method="POST" class="flex-1">
+        {% csrf_token %}
+        <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm bg-red-500 hover:bg-red-600 text-white transition-all">
+          <i class="fas fa-trash mr-2"></i>Supprimer
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,680 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Réserver {{ car.brand }} {{ car.model }} - Venice Autocars{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<style>
+/* ── Calendrier ── */
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-day {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:8px; font-size:.78rem; font-weight:500; cursor:pointer;
+  border:1px solid transparent; transition:all .15s; user-select:none;
+}
+.cal-day.empty    { background:transparent; cursor:default; }
+.cal-day.past     { color:#4b5563; cursor:not-allowed; }
+.cal-day.reserved { background:rgba(239,68,68,.12); color:#f87171; border-color:rgba(239,68,68,.3); cursor:not-allowed; text-decoration:line-through; }
+.cal-day.avail    { background:#1a1a2e; color:#d1d5db; border-color:#374151; }
+.cal-day.avail:hover { background:rgba(212,175,55,.18); border-color:#D4AF37; color:#D4AF37; }
+.cal-day.sel-start,.cal-day.sel-end { background:#D4AF37; color:#0a0a0f; font-weight:700; border-color:#D4AF37; }
+.cal-day.in-range { background:rgba(212,175,55,.15); color:#D4AF37; border-color:rgba(212,175,55,.25); }
+.cal-day.today    { border-color:#D4AF37 !important; }
+
+/* ── Carte ── */
+#pickup-map, #return-map {
+  height:260px; border-radius:12px;
+  border:1px solid #374151; position:relative; z-index:1;
+}
+.suggestions-box {
+  position:absolute; top:100%; left:0; right:0; z-index:9999;
+  background:#1a1a2e; border:1px solid #374151; border-radius:8px;
+  max-height:180px; overflow-y:auto; margin-top:2px;
+}
+.sug-item { padding:9px 14px; cursor:pointer; font-size:.8rem; color:#d1d5db; border-bottom:1px solid #374151; }
+.sug-item:hover { background:rgba(212,175,55,.1); color:#D4AF37; }
+.sug-item:last-child { border-bottom:none; }
+
+/* ── Paiement ── */
+.pm-card {
+  border:2px solid #374151; border-radius:12px; padding:14px;
+  cursor:pointer; transition:all .2s; position:relative;
+}
+.pm-card:hover { border-color:#D4AF37; background:rgba(212,175,55,.04); }
+.pm-card.active { border-color:#D4AF37; background:rgba(212,175,55,.08); }
+.pm-card .check-dot {
+  width:18px; height:18px; border-radius:50%; border:2px solid #374151;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:all .2s;
+}
+.pm-card.active .check-dot { background:#D4AF37; border-color:#D4AF37; }
+.pm-card.active .check-dot::after { content:''; width:7px; height:7px; background:#0a0a0f; border-radius:50%; }
+
+/* ── Input ── */
+.inp {
+  width:100%; padding:.7rem 1rem; background:#1a1a2e;
+  border:1px solid #374151; border-radius:.75rem; color:#fff;
+  font-size:.875rem; outline:none; transition:border-color .2s;
+}
+.inp:focus { border-color:#D4AF37; }
+.inp::placeholder { color:#6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-10 max-w-6xl mx-auto px-4">
+
+  <!-- Breadcrumb -->
+  <nav class="text-sm text-gray-400 mb-5">
+    <a href="{% url 'home' %}" class="hover:text-gold-400">Accueil</a>
+    <span class="mx-2">/</span>
+    <a href="{% url 'car_list' %}" class="hover:text-gold-400">Voitures</a>
+    <span class="mx-2">/</span>
+    <a href="{% url 'car_detail' car.pk %}" class="hover:text-gold-400">{{ car.brand }} {{ car.model }}</a>
+    <span class="mx-2">/</span>
+    <span class="text-white">Réservation</span>
+  </nav>
+
+  <h1 class="text-3xl font-black text-white mb-6">
+    Réserver <span class="text-gold-400">{{ car.brand }} {{ car.model }}</span>
+  </h1>
+
+  {% if messages %}
+  <div class="mb-5 space-y-2">
+    {% for msg in messages %}
+    <div class="px-4 py-3 rounded-xl text-sm flex items-center gap-2
+      {% if msg.tags == 'error' %}bg-red-500/10 border border-red-500/30 text-red-400
+      {% else %}bg-green-500/10 border border-green-500/30 text-green-400{% endif %}">
+      <i class="fas fa-exclamation-circle"></i>{{ msg }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="POST" id="resForm">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- ══ COLONNE PRINCIPALE ══════════════════════════════════ -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- ÉTAPE 1 : Infos personnelles -->
+        <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+          <h3 class="text-white font-bold text-base mb-4 flex items-center gap-2">
+            <span class="w-7 h-7 gold-gradient rounded-full flex items-center justify-center text-dark-900 text-sm font-black flex-shrink-0">1</span>
+            Informations personnelles
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-400 text-xs mb-1.5">Nom complet *</label>
+              <input type="text" name="client_name" required class="inp"
+                placeholder="Mohammed Alami"
+                value="{% if user.is_authenticated %}{{ user.get_full_name }}{% endif %}">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-xs mb-1.5">Email *</label>
+              <input type="email" name="client_email" required class="inp"
+                placeholder="mohammed@exemple.ma"
+                value="{% if user.is_authenticated %}{{ user.email }}{% endif %}">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-xs mb-1.5">Téléphone *</label>
+              <input type="tel" name="client_phone" required class="inp"
+                placeholder="+212 6 00 00 00 00"
+                value="{% if user_profile %}{{ user_profile.phone }}{% endif %}">
+            </div>
+            <div>
+              <label class="block text-gray-400 text-xs mb-1.5">N° Permis</label>
+              <input type="text" name="client_license" class="inp" placeholder="AB123456">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-gray-400 text-xs mb-1.5">Adresse</label>
+              <input type="text" name="client_address" class="inp"
+                placeholder="Votre adresse au Maroc"
+                value="{% if user_profile %}{{ user_profile.address }}{% endif %}">
+            </div>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 2 : Calendrier -->
+        <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+          <h3 class="text-white font-bold text-base mb-1 flex items-center gap-2">
+            <span class="w-7 h-7 gold-gradient rounded-full flex items-center justify-center text-dark-900 text-sm font-black flex-shrink-0">2</span>
+            Choisir les dates
+          </h3>
+          <p class="text-gray-400 text-xs mb-4 ml-9">Cliquez sur une date de début puis une date de fin. Les jours en rouge sont déjà réservés.</p>
+
+          <!-- Légende -->
+          <div class="flex flex-wrap gap-3 mb-4 text-xs ml-9">
+            <span class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-dark-700 border border-gray-600 inline-block"></span>Disponible</span>
+            <span class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-red-500/20 border border-red-500/40 inline-block"></span>Réservé</span>
+            <span class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-yellow-500 inline-block"></span>Sélectionné</span>
+            <span class="flex items-center gap-1.5"><span class="w-4 h-4 rounded bg-yellow-500/20 border border-yellow-500/40 inline-block"></span>Période</span>
+          </div>
+
+          <!-- Navigation mois + bouton reset -->
+          <div class="flex items-center justify-between mb-3">
+            <button type="button" id="btnPrev" class="w-8 h-8 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-all">
+              <i class="fas fa-chevron-left text-xs"></i>
+            </button>
+            <span id="calTitle" class="text-white font-bold text-sm"></span>
+            <div class="flex items-center gap-2">
+              <button type="button" id="btnReset" class="hidden px-3 py-1 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 rounded-lg text-xs transition-all" onclick="resetDates()">
+                <i class="fas fa-times mr-1"></i>Effacer
+              </button>
+              <button type="button" id="btnNext" class="w-8 h-8 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-all">
+                <i class="fas fa-chevron-right text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Jours semaine -->
+          <div class="cal-grid mb-1">
+            {% for d in "LMMJVSD" %}<div class="text-center text-gray-500 text-xs py-1 font-semibold">{{ d }}</div>{% endfor %}
+          </div>
+
+          <!-- Grille jours -->
+          <div class="cal-grid" id="calGrid"></div>
+
+          <!-- Résumé dates -->
+          <div id="dateSummary" class="mt-4 p-3 bg-dark-700 rounded-xl hidden">
+            <div class="flex items-center justify-between text-sm flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-gold-400 text-xs"></i>
+                <span class="text-gray-400">Départ :</span>
+                <span id="dispStart" class="text-white font-semibold">—</span>
+              </div>
+              <i class="fas fa-arrow-right text-gold-400 text-xs"></i>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-calendar-check text-gold-400 text-xs"></i>
+                <span class="text-gray-400">Retour :</span>
+                <span id="dispEnd" class="text-white font-semibold">—</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-moon text-gold-400 text-xs"></i>
+                <span id="dispDays" class="text-gold-400 font-bold">—</span>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" name="start_date" id="inpStart">
+          <input type="hidden" name="end_date"   id="inpEnd">
+        </div>
+
+        <!-- ÉTAPE 3 : Carte -->
+        <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+          <h3 class="text-white font-bold text-base mb-1 flex items-center gap-2">
+            <span class="w-7 h-7 gold-gradient rounded-full flex items-center justify-center text-dark-900 text-sm font-black flex-shrink-0">3</span>
+            Lieux de prise en charge et retour
+          </h3>
+          <p class="text-gray-400 text-xs mb-5 ml-9">Recherchez une adresse ou cliquez sur la carte.</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Pickup -->
+            <div>
+              <label class="block text-gray-400 text-xs mb-2 font-medium">
+                <i class="fas fa-map-marker-alt text-green-400 mr-1"></i>Prise en charge
+              </label>
+              <div class="relative mb-2">
+                <input type="text" id="pickupSearch" class="inp" placeholder="Rechercher au Maroc..." autocomplete="off">
+                <div id="pickupSug" class="suggestions-box hidden"></div>
+              </div>
+              <div id="pickup-map"></div>
+              <p id="pickupAddr" class="text-xs text-gray-400 mt-2 truncate">
+                <i class="fas fa-info-circle text-gold-400 mr-1"></i>Agence Venice Autocars, Casablanca
+              </p>
+              <input type="hidden" name="pickup_location" id="inpPickupLoc" value="Agence Venice Autocars - Hay Azhar Bernoussi, Casablanca">
+              <input type="hidden" name="pickup_lat" id="inpPickupLat">
+              <input type="hidden" name="pickup_lng" id="inpPickupLng">
+            </div>
+
+            <!-- Return -->
+            <div>
+              <label class="block text-gray-400 text-xs mb-2 font-medium">
+                <i class="fas fa-flag-checkered text-red-400 mr-1"></i>Lieu de retour
+              </label>
+              <div class="relative mb-2">
+                <input type="text" id="returnSearch" class="inp" placeholder="Rechercher au Maroc..." autocomplete="off">
+                <div id="returnSug" class="suggestions-box hidden"></div>
+              </div>
+              <div id="return-map"></div>
+              <p id="returnAddr" class="text-xs text-gray-400 mt-2 truncate">
+                <i class="fas fa-info-circle text-gold-400 mr-1"></i>Agence Venice Autocars, Casablanca
+              </p>
+              <input type="hidden" name="return_location" id="inpReturnLoc" value="Agence Venice Autocars - Hay Azhar Bernoussi, Casablanca">
+              <input type="hidden" name="return_lat" id="inpReturnLat">
+              <input type="hidden" name="return_lng" id="inpReturnLng">
+              <label class="flex items-center gap-2 mt-3 cursor-pointer">
+                <input type="checkbox" id="chkSame" class="w-4 h-4 accent-yellow-500">
+                <span class="text-gray-400 text-xs">Même lieu que la prise en charge</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 4 : Paiement -->
+        <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+          <h3 class="text-white font-bold text-base mb-1 flex items-center gap-2">
+            <span class="w-7 h-7 gold-gradient rounded-full flex items-center justify-center text-dark-900 text-sm font-black flex-shrink-0">4</span>
+            Méthode de paiement
+          </h3>
+          <p class="text-gray-400 text-xs mb-5 ml-9">Choisissez comment vous souhaitez régler votre location.</p>
+
+          {% if payment_methods %}
+          <div class="space-y-3" id="pmList">
+            {% for pm in payment_methods %}
+            <div class="pm-card" id="pmCard_{{ pm.method_type }}" onclick="selectPM('{{ pm.method_type }}')">
+              <div class="flex items-center gap-3">
+                <div class="check-dot"></div>
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+                  {% if pm.method_type == 'virement' %}bg-blue-500/20 text-blue-400
+                  {% elif pm.method_type == 'versement' %}bg-green-500/20 text-green-400
+                  {% else %}bg-purple-500/20 text-purple-400{% endif %}">
+                  <i class="fas {% if pm.method_type == 'virement' %}fa-university{% elif pm.method_type == 'versement' %}fa-money-bill-wave{% else %}fa-handshake{% endif %} text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-white font-semibold text-sm">{{ pm.get_method_type_display }}</div>
+                  <div class="text-gray-400 text-xs mt-0.5 truncate">{{ pm.instructions|truncatechars:60 }}</div>
+                </div>
+              </div>
+              <!-- Détails banque (cachés par défaut) -->
+              {% if pm.bank_name %}
+              <div class="pm-details hidden mt-3 pt-3 border-t border-gray-700 text-xs space-y-1">
+                {% if pm.bank_name %}<div class="flex justify-between"><span class="text-gray-400">Banque</span><span class="text-white">{{ pm.bank_name }}</span></div>{% endif %}
+                {% if pm.account_number %}<div class="flex justify-between"><span class="text-gray-400">RIB</span><span class="text-white font-mono">{{ pm.account_number }}</span></div>{% endif %}
+                {% if pm.account_name %}<div class="flex justify-between"><span class="text-gray-400">Titulaire</span><span class="text-white">{{ pm.account_name }}</span></div>{% endif %}
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="payment_method" id="inpPM" value="">
+          {% else %}
+          <div class="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-400 text-sm">
+            <i class="fas fa-exclamation-triangle mr-2"></i>Aucune méthode configurée. Contactez l'agence.
+          </div>
+          <input type="hidden" name="payment_method" value="livraison">
+          {% endif %}
+        </div>
+
+        <!-- ÉTAPE 5 : Notes -->
+        <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+          <h3 class="text-white font-bold text-base mb-4 flex items-center gap-2">
+            <span class="w-7 h-7 gold-gradient rounded-full flex items-center justify-center text-dark-900 text-sm font-black flex-shrink-0">5</span>
+            Notes (optionnel)
+          </h3>
+          <textarea name="notes" rows="3" class="inp resize-none" placeholder="Demandes spéciales, informations supplémentaires..."></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-4 rounded-xl font-bold text-lg text-dark-900 transition-all hover:opacity-90 active:scale-95"
+          style="background:linear-gradient(135deg,#D4AF37,#C9A227);">
+          <i class="fas fa-calendar-check mr-2"></i>Confirmer la réservation
+        </button>
+      </div>
+
+      <!-- ══ SIDEBAR RÉCAP ══════════════════════════════════════ -->
+      <div>
+        <div class="bg-dark-800 rounded-2xl border border-gray-800 p-5 sticky top-20">
+          <h3 class="text-white font-bold mb-4 text-sm">Récapitulatif</h3>
+
+          <div class="rounded-xl overflow-hidden mb-4" style="height:160px;">
+            {% if car.image %}
+            <img src="{{ car.image.url }}" alt="{{ car.brand }}" class="w-full h-full object-cover">
+            {% else %}
+            <div class="w-full h-full bg-dark-700 flex items-center justify-center">
+              <i class="fas fa-car text-gray-600 text-4xl"></i>
+            </div>
+            {% endif %}
+          </div>
+
+          <h4 class="text-white font-bold">{{ car.brand }} {{ car.model }}</h4>
+          <p class="text-gray-400 text-xs mt-0.5">{{ car.year }} · {{ car.get_transmission_display }}</p>
+
+          <div class="border-t border-gray-700 mt-4 pt-4 space-y-2 text-xs">
+            <div class="flex justify-between text-gray-400">
+              <span>Prix par jour</span>
+              <span class="text-white font-medium">{{ car.price_per_day|floatformat:0 }} DH</span>
+            </div>
+            <div class="flex justify-between text-gray-400">
+              <span>Assurance</span>
+              <span class="text-green-400">Incluse</span>
+            </div>
+          </div>
+
+          <!-- Total dynamique -->
+          <div id="totalBox" class="mt-4 p-3 bg-dark-700 rounded-xl hidden">
+            <div class="text-xs text-gray-400 mb-1" id="totalCalc"></div>
+            <div class="flex justify-between items-center">
+              <span class="text-white font-bold text-sm">Total</span>
+              <span id="totalAmt" class="text-gold-400 font-black text-xl"></span>
+            </div>
+          </div>
+
+          <!-- Méthode sélectionnée -->
+          <div id="pmInfo" class="mt-3 p-3 bg-dark-700 rounded-xl hidden text-xs">
+            <div class="text-gray-400 mb-1">Paiement choisi :</div>
+            <div id="pmInfoText" class="text-white font-medium"></div>
+          </div>
+
+          <div class="mt-4 space-y-1.5 text-xs text-gray-500">
+            <div class="flex items-center gap-2"><i class="fas fa-shield-alt text-gold-400"></i>Assurance tous risques incluse</div>
+            <div class="flex items-center gap-2"><i class="fas fa-undo text-gold-400"></i>Annulation gratuite 48h avant</div>
+            <div class="flex items-center gap-2"><i class="fas fa-headset text-gold-400"></i>Support 7j/7 au Maroc</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /grid -->
+  </form>
+</section>
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// DONNÉES (injectées depuis Django)
+// ═══════════════════════════════════════════════════════════
+const RESERVED = new Set({{ reserved_dates_json|safe }});
+const PPD = parseFloat("{{ car.price_per_day }}");   // price per day — float propre
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+// ═══════════════════════════════════════════════════════════
+// CALENDRIER
+// ═══════════════════════════════════════════════════════════
+let curY = TODAY.getFullYear();
+let curM = TODAY.getMonth();
+let selStart = null, selEnd = null;
+
+const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin',
+                'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function toISO(d) {
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+}
+
+function fmtDate(iso) {
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function renderCal() {
+  document.getElementById('calTitle').textContent = `${MONTHS[curM]} ${curY}`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  const firstDow = new Date(curY, curM, 1).getDay(); // 0=Sun
+  const offset = firstDow === 0 ? 6 : firstDow - 1;  // Mon=0
+  const daysInMonth = new Date(curY, curM+1, 0).getDate();
+
+  for (let i = 0; i < offset; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(curY, curM, d);
+    const iso  = toISO(date);
+    const el   = document.createElement('div');
+    el.textContent = d;
+
+    const isPast     = date < TODAY;
+    const isReserved = RESERVED.has(iso);
+    const isToday    = iso === toISO(TODAY);
+
+    if (isPast) {
+      el.className = 'cal-day past';
+    } else if (isReserved) {
+      el.className = 'cal-day reserved';
+      el.title = 'Déjà réservé';
+    } else {
+      el.className = 'cal-day avail';
+      el.addEventListener('click', () => onDayClick(iso));
+    }
+
+    if (isToday) el.classList.add('today');
+
+    // Colorisation sélection
+    if (selStart && iso === selStart) el.classList.add('sel-start');
+    if (selEnd   && iso === selEnd)   el.classList.add('sel-end');
+    if (selStart && selEnd && iso > selStart && iso < selEnd) el.classList.add('in-range');
+
+    grid.appendChild(el);
+  }
+}
+
+function onDayClick(iso) {
+  // Clic sur la date de début déjà sélectionnée → désélectionner
+  if (selStart && !selEnd && iso === selStart) {
+    resetDates();
+    return;
+  }
+  if (!selStart || (selStart && selEnd)) {
+    // Première sélection
+    selStart = iso;
+    selEnd   = null;
+  } else {
+    // Deuxième sélection
+    if (iso <= selStart) { selStart = iso; selEnd = null; renderCal(); updateSummary(); return; }
+
+    // Vérifier conflit dans la plage
+    let cur = new Date(selStart);
+    const end = new Date(iso);
+    let conflict = false;
+    while (cur <= end) {
+      if (RESERVED.has(toISO(cur))) { conflict = true; break; }
+      cur.setDate(cur.getDate()+1);
+    }
+    if (conflict) {
+      alert('Votre sélection inclut des jours déjà réservés. Choisissez une autre période.');
+      return;
+    }
+    selEnd = iso;
+  }
+  renderCal();
+  updateSummary();
+}
+
+function resetDates() {
+  selStart = null;
+  selEnd   = null;
+  document.getElementById('inpStart').value = '';
+  document.getElementById('inpEnd').value   = '';
+  document.getElementById('dateSummary').classList.add('hidden');
+  document.getElementById('totalBox').classList.add('hidden');
+  document.getElementById('btnReset').classList.add('hidden');
+  renderCal();
+}
+
+function updateSummary() {
+  const box = document.getElementById('dateSummary');
+  // Afficher le bouton reset dès qu'une date est choisie
+  document.getElementById('btnReset').classList.toggle('hidden', !selStart);
+
+  if (selStart) {
+    document.getElementById('inpStart').value = selStart;
+    document.getElementById('dispStart').textContent = fmtDate(selStart);
+  }
+  if (selEnd) {
+    document.getElementById('inpEnd').value = selEnd;
+    document.getElementById('dispEnd').textContent = fmtDate(selEnd);
+    const days = Math.round((new Date(selEnd) - new Date(selStart)) / 86400000);
+    document.getElementById('dispDays').textContent = days + ' jour(s)';
+    box.classList.remove('hidden');
+    // Total
+    const total = days * PPD;
+    document.getElementById('totalCalc').textContent = `${days} j × ${PPD.toLocaleString('fr-MA')} DH`;
+    document.getElementById('totalAmt').textContent  = total.toLocaleString('fr-MA') + ' DH';
+    document.getElementById('totalBox').classList.remove('hidden');
+  } else if (selStart) {
+    document.getElementById('dispEnd').textContent = '— choisir —';
+    document.getElementById('dispDays').textContent = '';
+    box.classList.remove('hidden');
+    document.getElementById('totalBox').classList.add('hidden');
+  }
+}
+
+document.getElementById('btnPrev').addEventListener('click', () => {
+  curM--; if (curM < 0) { curM = 11; curY--; } renderCal();
+});
+document.getElementById('btnNext').addEventListener('click', () => {
+  curM++; if (curM > 11) { curM = 0; curY++; } renderCal();
+});
+
+// ═══════════════════════════════════════════════════════════
+// CARTES LEAFLET
+// ═══════════════════════════════════════════════════════════
+const CASA = [33.5731, -7.5898];
+
+function makeIcon(color) {
+  return L.divIcon({
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>`,
+    iconSize:[14,14], iconAnchor:[7,7], className:''
+  });
+}
+
+function initMap(mapId, addrEl, locInput, latInput, lngInput) {
+  const map = L.map(mapId, { zoomControl:true, attributionControl:false })
+               .setView(CASA, 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(map);
+
+  const color = mapId === 'pickup-map' ? '#22c55e' : '#ef4444';
+  const marker = L.marker(CASA, { icon: makeIcon(color), draggable:true }).addTo(map);
+
+  function setAddr(lat, lng) {
+    document.getElementById(latInput).value = lat;
+    document.getElementById(lngInput).value = lng;
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`)
+      .then(r => r.json())
+      .then(d => {
+        const addr = d.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        document.getElementById(locInput).value = addr;
+        document.getElementById(addrEl).innerHTML =
+          `<i class="fas fa-info-circle text-gold-400 mr-1"></i>${addr.substring(0,60)}${addr.length>60?'…':''}`;
+      }).catch(() => {});
+  }
+
+  map.on('click', e => { marker.setLatLng(e.latlng); setAddr(e.latlng.lat, e.latlng.lng); });
+  marker.on('dragend', e => { const p = e.target.getLatLng(); setAddr(p.lat, p.lng); });
+
+  return { map, marker, setAddr };
+}
+
+// Initialiser les cartes après que le DOM soit prêt
+const pickupMap = initMap('pickup-map', 'pickupAddr', 'inpPickupLoc', 'inpPickupLat', 'inpPickupLng');
+const returnMap = initMap('return-map', 'returnAddr', 'inpReturnLoc', 'inpReturnLat', 'inpReturnLng');
+
+// Recherche Nominatim
+function setupSearch(inputId, sugId, mapObj, addrEl, locInput, latInput, lngInput) {
+  const inp = document.getElementById(inputId);
+  const sug = document.getElementById(sugId);
+  let timer;
+
+  inp.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = inp.value.trim();
+    if (q.length < 3) { sug.classList.add('hidden'); return; }
+    timer = setTimeout(() => {
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q+' Maroc')}&format=json&limit=5&accept-language=fr&countrycodes=ma`)
+        .then(r => r.json())
+        .then(results => {
+          sug.innerHTML = '';
+          if (!results.length) { sug.classList.add('hidden'); return; }
+          results.forEach(r => {
+            const item = document.createElement('div');
+            item.className = 'sug-item';
+            item.textContent = r.display_name;
+            item.addEventListener('click', () => {
+              const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
+              mapObj.map.setView([lat,lng], 15);
+              mapObj.marker.setLatLng([lat,lng]);
+              document.getElementById(latInput).value = lat;
+              document.getElementById(lngInput).value = lng;
+              document.getElementById(locInput).value = r.display_name;
+              document.getElementById(addrEl).innerHTML =
+                `<i class="fas fa-info-circle text-gold-400 mr-1"></i>${r.display_name.substring(0,60)}…`;
+              inp.value = r.display_name.split(',')[0];
+              sug.classList.add('hidden');
+            });
+            sug.appendChild(item);
+          });
+          sug.classList.remove('hidden');
+        });
+    }, 400);
+  });
+  document.addEventListener('click', e => { if (!inp.contains(e.target)) sug.classList.add('hidden'); });
+}
+
+setupSearch('pickupSearch','pickupSug', pickupMap, 'pickupAddr','inpPickupLoc','inpPickupLat','inpPickupLng');
+setupSearch('returnSearch', 'returnSug', returnMap, 'returnAddr','inpReturnLoc','inpReturnLat','inpReturnLng');
+
+// Même lieu
+document.getElementById('chkSame').addEventListener('change', function() {
+  if (!this.checked) return;
+  const lat = document.getElementById('inpPickupLat').value;
+  const lng = document.getElementById('inpPickupLng').value;
+  const loc = document.getElementById('inpPickupLoc').value;
+  document.getElementById('inpReturnLoc').value = loc;
+  document.getElementById('inpReturnLat').value = lat;
+  document.getElementById('inpReturnLng').value = lng;
+  document.getElementById('returnAddr').innerHTML =
+    `<i class="fas fa-info-circle text-gold-400 mr-1"></i>${loc.substring(0,60)}`;
+  if (lat && lng) {
+    returnMap.map.setView([parseFloat(lat), parseFloat(lng)], 15);
+    returnMap.marker.setLatLng([parseFloat(lat), parseFloat(lng)]);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// MÉTHODES DE PAIEMENT
+// ═══════════════════════════════════════════════════════════
+function selectPM(type) {
+  document.querySelectorAll('.pm-card').forEach(c => {
+    c.classList.remove('active');
+    const det = c.querySelector('.pm-details');
+    if (det) det.classList.add('hidden');
+  });
+  const card = document.getElementById('pmCard_' + type);
+  if (card) {
+    card.classList.add('active');
+    const det = card.querySelector('.pm-details');
+    if (det) det.classList.remove('hidden');
+  }
+  document.getElementById('inpPM').value = type;
+  const labels = { virement:'Virement bancaire', versement:'Versement bancaire', livraison:'Paiement à la livraison' };
+  document.getElementById('pmInfoText').textContent = labels[type] || type;
+  document.getElementById('pmInfo').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════
+// VALIDATION SOUMISSION
+// ═══════════════════════════════════════════════════════════
+document.getElementById('resForm').addEventListener('submit', function(e) {
+  if (!document.getElementById('inpStart').value) {
+    e.preventDefault(); alert('Veuillez sélectionner une date de début.'); return;
+  }
+  if (!document.getElementById('inpEnd').value) {
+    e.preventDefault(); alert('Veuillez sélectionner une date de fin.'); return;
+  }
+  if (!document.getElementById('inpPM').value) {
+    e.preventDefault(); alert('Veuillez choisir une méthode de paiement.'); return;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+renderCal();
+
+// Forcer le redimensionnement des cartes (fix Leaflet dans flex/grid)
+setTimeout(() => {
+  pickupMap.map.invalidateSize();
+  returnMap.map.invalidateSize();
+}, 300);
+</script>
+{% endblock %}
+{% endblock %}

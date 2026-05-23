@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Venice Autocars - Location de Voitures Premium au Maroc{% endblock %}
+
+{% block extra_head %}
+<style>
+  .hero-bg {
+    background-image:
+      linear-gradient(to right, rgba(10,10,15,0.97) 0%, rgba(10,10,15,0.85) 50%, rgba(10,10,15,0.4) 100%),
+      url('{% static "images/hero_car.jpg" %}');
+    background-size: cover;
+    background-position: center 40%;
+    background-attachment: fixed;
+  }
+  .counter-num { background: linear-gradient(135deg, #D4AF37, #C9A227); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HERO — Image de fond voiture de nuit
+═══════════════════════════════════════════════════════════════ -->
+<section class="hero-bg min-h-screen flex items-center relative overflow-hidden">
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-1/3 right-1/4 w-96 h-96 bg-gold-400/5 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10 w-full">
+    <div class="max-w-2xl">
+      <div class="inline-flex items-center px-4 py-2 bg-gold-400/10 border border-gold-400/30 rounded-full text-gold-400 text-sm font-medium mb-6">
+        <i class="fas fa-map-marker-alt mr-2"></i>Casablanca, Hay Azhar Bernoussi · Maroc
+      </div>
+
+      <h1 class="text-5xl lg:text-7xl font-black text-white leading-tight mb-6">
+        Conduisez<br>
+        <span class="text-gold-400">l'Excellence</span><br>
+        <span class="text-3xl lg:text-4xl font-light text-gray-300">au Maroc</span>
+      </h1>
+
+      <p class="text-gray-300 text-lg leading-relaxed mb-10 max-w-xl">
+        Venice Autocars vous propose une flotte de véhicules premium à Casablanca. Réservez en ligne, payez en <strong class="text-gold-400">Dirham marocain</strong>.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 mb-14">
+        <a href="{% url 'car_list' %}" class="btn-gold px-8 py-4 rounded-xl text-base font-bold text-center shadow-lg shadow-yellow-500/20">
+          <i class="fas fa-car mr-2"></i>Voir nos voitures
+        </a>
+        <a href="{% url 'contact' %}" class="px-8 py-4 rounded-xl text-base font-bold border border-white/20 hover:border-gold-400 text-white hover:text-gold-400 transition-all text-center backdrop-blur-sm bg-white/5">
+          <i class="fas fa-phone mr-2"></i>Nous contacter
+        </a>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-6 pt-8 border-t border-white/10 max-w-sm">
+        <div>
+          <div class="text-3xl font-black counter-num">{{ total_cars }}+</div>
+          <div class="text-gray-400 text-sm mt-1">Véhicules</div>
+        </div>
+        <div>
+          <div class="text-3xl font-black counter-num">{{ available_cars }}</div>
+          <div class="text-gray-400 text-sm mt-1">Disponibles</div>
+        </div>
+        <div>
+          <div class="text-3xl font-black counter-num">7j/7</div>
+          <div class="text-gray-400 text-sm mt-1">Disponible</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-400 animate-bounce">
+    <span class="text-xs tracking-widest uppercase">Découvrir</span>
+    <i class="fas fa-chevron-down text-gold-400"></i>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BARRE DE RECHERCHE
+═══════════════════════════════════════════════════════════════ -->
+<section class="bg-dark-800 py-8 border-y border-gray-800 relative z-10 shadow-2xl">
+  <div class="max-w-5xl mx-auto px-4">
+    <form action="{% url 'car_list' %}" method="GET" class="flex flex-col md:flex-row gap-4 items-end">
+      <div class="flex-1">
+        <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Rechercher</label>
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+          <input type="text" name="search" placeholder="Marque ou modèle..."
+            class="w-full pl-10 pr-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+        </div>
+      </div>
+      <div class="flex-1">
+        <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Catégorie</label>
+        <select name="category" class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+          <option value="">Toutes catégories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Disponibilité</label>
+        <select name="available" class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+          <option value="">Toutes</option>
+          <option value="1">Disponibles uniquement</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-gold px-8 py-3 rounded-xl font-bold whitespace-nowrap text-sm">
+        <i class="fas fa-search mr-2"></i>Rechercher
+      </button>
+    </form>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GALERIE AMBIANCE — 3 images premium
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-16 max-w-7xl mx-auto px-4">
+  <div class="text-center mb-8">
+    <span class="text-gold-400 text-xs font-semibold uppercase tracking-widest">Notre univers</span>
+    <h2 class="text-3xl font-black text-white mt-2">La <span class="text-gold-400">Flotte Premium</span></h2>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Image 1 — grande, occupe 2 lignes sur desktop -->
+    <div class="md:row-span-2 rounded-2xl overflow-hidden relative" style="height:420px;">
+      <img src="{% static 'images/gallery_main.jpg' %}"
+        alt="Voiture premium"
+        class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+        loading="lazy">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-5">
+        <div>
+          <span class="text-gold-400 text-xs font-semibold uppercase tracking-widest">Flotte Premium</span>
+          <p class="text-white font-bold text-lg mt-1">Véhicules haut de gamme</p>
+        </div>
+      </div>
+    </div>
+    <!-- Image 2 -->
+    <div class="rounded-2xl overflow-hidden relative" style="height:200px;">
+      <img src="{% static 'images/gallery_berline.jpg' %}"
+        alt="Berlines & SUV"
+        class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+        loading="lazy">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+        <span class="text-white text-sm font-semibold">Berlines & SUV</span>
+      </div>
+    </div>
+    <!-- Image 3 -->
+    <div class="rounded-2xl overflow-hidden relative" style="height:200px;">
+      <img src="{% static 'images/car_berline.jpg' %}"
+        alt="Berlines premium"
+        class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+        loading="lazy">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+        <span class="text-white text-sm font-semibold">Berlines Premium</span>
+      </div>
+    </div>
+    <!-- Image 4 -->
+    <div class="rounded-2xl overflow-hidden relative" style="height:200px;">
+      <img src="{% static 'images/gallery_night.jpg' %}"
+        alt="Sportives & Luxe"
+        class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+        loading="lazy">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+        <span class="text-white text-sm font-semibold">Sportives & Luxe</span>
+      </div>
+    </div>
+    <!-- Image 5 -->
+    <div class="rounded-2xl overflow-hidden relative" style="height:200px;">
+      <img src="{% static 'images/car_suv.jpg' %}"
+        alt="SUV & 4x4"
+        class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+        loading="lazy">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+        <span class="text-white text-sm font-semibold">SUV & 4x4</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     VOITURES EN VEDETTE
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-16 max-w-7xl mx-auto px-4">
+  <div class="flex items-end justify-between mb-10">
+    <div>
+      <div class="inline-flex items-center px-4 py-2 bg-gold-400/10 border border-gold-400/30 rounded-full text-gold-400 text-sm font-medium mb-3">
+        <i class="fas fa-fire mr-2"></i>Sélection du moment
+      </div>
+      <h2 class="text-4xl font-black text-white">Nos Véhicules <span class="text-gold-400">Disponibles</span></h2>
+    </div>
+    <a href="{% url 'car_list' %}" class="hidden md:flex items-center gap-2 text-gold-400 hover:text-gold-500 font-medium text-sm transition-colors">
+      Voir tout <i class="fas fa-arrow-right"></i>
+    </a>
+  </div>
+
+  {% if featured_cars %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for car in featured_cars %}
+    <div class="card-hover bg-dark-800 rounded-2xl overflow-hidden border border-gray-800 hover:border-gold-400/30 group flex flex-col">
+
+      <!-- Image — hauteur fixe 220px, ne déborde jamais -->
+      <div class="relative flex-shrink-0 overflow-hidden" style="height:220px;">
+        {% if car.image %}
+        <img src="{{ car.image.url }}" alt="{{ car.brand }} {{ car.model }}"
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+        {% elif car.category.name == "SUV" %}
+        <img src="{% static 'images/car_suv.jpg' %}" alt="{{ car.brand }}"
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+        {% elif car.category.name == "Sportive" %}
+        <img src="{% static 'images/car_sport.jpg' %}" alt="{{ car.brand }}"
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+        {% elif car.category.name == "Berline" %}
+        <img src="{% static 'images/car_berline.jpg' %}" alt="{{ car.brand }}"
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+        {% else %}
+        <img src="{% static 'images/car_default.jpg' %}" alt="{{ car.brand }}"
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy">
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="absolute top-3 right-3">
+          {% if car.is_available %}
+          <span class="px-3 py-1 bg-green-500/20 border border-green-500/50 text-green-400 text-xs font-medium rounded-full backdrop-blur-sm">
+            <i class="fas fa-circle text-xs mr-1"></i>Disponible
+          </span>
+          {% else %}
+          <span class="px-3 py-1 bg-red-500/20 border border-red-500/50 text-red-400 text-xs font-medium rounded-full backdrop-blur-sm">
+            Indisponible
+          </span>
+          {% endif %}
+        </div>
+        {% if car.category %}
+        <div class="absolute top-3 left-3">
+          <span class="px-3 py-1 bg-black/60 text-gray-200 text-xs rounded-full backdrop-blur-sm">{{ car.category.name }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Infos -->
+      <div class="p-5 flex flex-col flex-1">
+        <h3 class="text-white font-bold text-lg leading-tight">{{ car.brand }} {{ car.model }}</h3>
+        <p class="text-gray-400 text-sm mt-1">{{ car.year }} · {{ car.get_transmission_display }} · {{ car.get_fuel_display }}</p>
+        <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
+          <span><i class="fas fa-users mr-1"></i>{{ car.seats }} places</span>
+          <span><i class="fas fa-door-open mr-1"></i>{{ car.doors }} portes</span>
+        </div>
+        <div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-700">
+          <div>
+            <span class="text-gold-400 font-black text-2xl">{{ car.price_per_day }}</span>
+            <span class="text-gold-400 font-bold text-sm"> DH</span>
+            <span class="text-gray-400 text-xs">/jour</span>
+          </div>
+          <div class="flex gap-2">
+            <a href="{% url 'car_detail' car.pk %}" class="px-4 py-2 border border-gray-600 hover:border-gold-400 text-gray-300 hover:text-white rounded-lg text-sm transition-all">
+              Détails
+            </a>
+            {% if car.is_available %}
+            <a href="{% url 'reservation_create' car.pk %}" class="btn-gold px-4 py-2 rounded-lg text-sm">
+              Réserver
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="text-center mt-10">
+    <a href="{% url 'car_list' %}" class="btn-gold px-8 py-4 rounded-xl font-bold inline-block">
+      <i class="fas fa-th-large mr-2"></i>Voir toute la flotte
+    </a>
+  </div>
+  {% else %}
+  <div class="text-center py-20 text-gray-500">
+    <i class="fas fa-car text-6xl mb-4 opacity-30"></i>
+    <p class="text-xl">Aucun véhicule disponible pour le moment.</p>
+  </div>
+  {% endif %}
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BANNIÈRE IMAGE PLEINE LARGEUR
+═══════════════════════════════════════════════════════════════ -->
+<section class="relative h-72 overflow-hidden my-4">
+  <img src="{% static "images/banner_car.jpg" %}"
+    alt="Voiture de luxe" class="w-full h-full object-cover object-center" loading="lazy">
+  <div class="absolute inset-0 bg-gradient-to-r from-dark-900/90 via-dark-900/50 to-transparent flex items-center">
+    <div class="max-w-7xl mx-auto px-4 w-full">
+      <h2 class="text-4xl lg:text-5xl font-black text-white mb-3">
+        L'excellence <span class="text-gold-400">automobile</span><br>à Casablanca
+      </h2>
+      <a href="{% url 'car_list' %}" class="btn-gold px-6 py-3 rounded-xl font-bold inline-block text-sm mt-2">
+        Réserver maintenant →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     POURQUOI NOUS
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-20 bg-dark-800 border-y border-gray-800">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-black text-white">Pourquoi choisir <span class="text-gold-400">Venice Autocars</span> ?</h2>
+      <p class="text-gray-400 mt-3">La référence de la location premium à Casablanca</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="text-center p-6 bg-dark-700 rounded-2xl border border-gray-700 hover:border-gold-400/30 transition-all group">
+        <div class="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+          <i class="fas fa-shield-alt text-dark-900 text-xl"></i>
+        </div>
+        <h3 class="text-white font-bold mb-2">Assurance Complète</h3>
+        <p class="text-gray-400 text-sm">Tous nos véhicules sont assurés tous risques pour votre tranquillité.</p>
+      </div>
+      <div class="text-center p-6 bg-dark-700 rounded-2xl border border-gray-700 hover:border-gold-400/30 transition-all group">
+        <div class="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+          <i class="fas fa-clock text-dark-900 text-xl"></i>
+        </div>
+        <h3 class="text-white font-bold mb-2">Disponible 7j/7</h3>
+        <p class="text-gray-400 text-sm">Notre équipe est disponible tous les jours pour vous accompagner.</p>
+      </div>
+      <div class="text-center p-6 bg-dark-700 rounded-2xl border border-gray-700 hover:border-gold-400/30 transition-all group">
+        <div class="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+          <i class="fas fa-star text-dark-900 text-xl"></i>
+        </div>
+        <h3 class="text-white font-bold mb-2">Flotte Premium</h3>
+        <p class="text-gray-400 text-sm">Des véhicules récents, propres et parfaitement entretenus.</p>
+      </div>
+      <div class="text-center p-6 bg-dark-700 rounded-2xl border border-gray-700 hover:border-gold-400/30 transition-all group">
+        <div class="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+          <i class="fas fa-tag text-dark-900 text-xl"></i>
+        </div>
+        <h3 class="text-white font-bold mb-2">Prix en Dirham</h3>
+        <p class="text-gray-400 text-sm">Tarifs transparents en MAD. Aucun frais caché, paiement local.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION PROCESSUS — 3 étapes
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-20 max-w-7xl mx-auto px-4">
+  <div class="text-center mb-12">
+    <h2 class="text-4xl font-black text-white">Réserver en <span class="text-gold-400">3 étapes</span></h2>
+    <p class="text-gray-400 mt-3">Simple, rapide et sécurisé</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+    <!-- Ligne de connexion desktop -->
+    <div class="hidden md:block absolute top-10 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-gold-400/30 via-gold-400 to-gold-400/30"></div>
+
+    <div class="text-center relative">
+      <div class="w-20 h-20 gold-gradient rounded-full flex items-center justify-center mx-auto mb-5 text-dark-900 font-black text-2xl shadow-lg shadow-yellow-500/30">1</div>
+      <h3 class="text-white font-bold text-lg mb-2">Choisissez votre voiture</h3>
+      <p class="text-gray-400 text-sm">Parcourez notre flotte et sélectionnez le véhicule qui vous convient.</p>
+    </div>
+    <div class="text-center relative">
+      <div class="w-20 h-20 gold-gradient rounded-full flex items-center justify-center mx-auto mb-5 text-dark-900 font-black text-2xl shadow-lg shadow-yellow-500/30">2</div>
+      <h3 class="text-white font-bold text-lg mb-2">Réservez en ligne</h3>
+      <p class="text-gray-400 text-sm">Remplissez le formulaire, choisissez vos dates et votre méthode de paiement.</p>
+    </div>
+    <div class="text-center relative">
+      <div class="w-20 h-20 gold-gradient rounded-full flex items-center justify-center mx-auto mb-5 text-dark-900 font-black text-2xl shadow-lg shadow-yellow-500/30">3</div>
+      <h3 class="text-white font-bold text-lg mb-2">Prenez la route</h3>
+      <p class="text-gray-400 text-sm">Après confirmation et paiement, récupérez votre véhicule à l'agence.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CTA FINAL avec image de fond
+═══════════════════════════════════════════════════════════════ -->
+<section class="relative overflow-hidden mx-4 mb-16 rounded-3xl">
+  <img src="{% static "images/cta_car.jpg" %}"
+    alt="Voiture premium" class="w-full h-72 object-cover object-center" loading="lazy">
+  <div class="absolute inset-0 bg-gradient-to-r from-dark-900/95 to-dark-900/60 flex items-center">
+    <div class="max-w-7xl mx-auto px-8 w-full">
+      <div class="max-w-lg">
+        <h2 class="text-4xl font-black text-white mb-3">Prêt à prendre la route ?</h2>
+        <p class="text-gray-300 mb-6">Réservez votre véhicule en ligne en moins de 2 minutes.</p>
+        <div class="flex gap-3">
+          <a href="{% url 'car_list' %}" class="btn-gold px-8 py-3 rounded-xl font-bold">
+            <i class="fas fa-car mr-2"></i>Réserver maintenant
+          </a>
+          <a href="{% url 'contact' %}" class="px-8 py-3 rounded-xl font-bold border border-white/30 text-white hover:border-gold-400 hover:text-gold-400 transition-all">
+            <i class="fas fa-phone mr-2"></i>Appeler
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

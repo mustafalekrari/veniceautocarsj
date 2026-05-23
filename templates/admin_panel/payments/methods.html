@@ -1,0 +1,148 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}Méthodes de paiement - Admin{% endblock %}
+{% block page_title %}Méthodes de paiement{% endblock %}
+{% block page_subtitle %}Configurez les options de paiement proposées aux clients{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Méthodes existantes -->
+  <div class="space-y-4">
+    <h3 class="text-white font-bold">Méthodes configurées</h3>
+
+    {% for pm in methods %}
+    <div class="bg-dark-800 rounded-2xl border {% if pm.is_active %}border-gray-700{% else %}border-gray-800 opacity-60{% endif %} p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center
+            {% if pm.method_type == 'virement' %}bg-blue-500/20 text-blue-400
+            {% elif pm.method_type == 'versement' %}bg-green-500/20 text-green-400
+            {% else %}bg-purple-500/20 text-purple-400{% endif %}">
+            <i class="fas {% if pm.method_type == 'virement' %}fa-university{% elif pm.method_type == 'versement' %}fa-money-bill-wave{% else %}fa-handshake{% endif %}"></i>
+          </div>
+          <div>
+            <div class="text-white font-bold text-sm">{{ pm.get_method_type_display }}</div>
+            <span class="text-xs {% if pm.is_active %}text-green-400{% else %}text-gray-500{% endif %}">
+              {% if pm.is_active %}● Activée{% else %}○ Désactivée{% endif %}
+            </span>
+          </div>
+        </div>
+        <form method="POST" class="inline" onsubmit="return confirm('Supprimer cette méthode ?')">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="pk" value="{{ pm.pk }}">
+          <button type="submit" class="p-2 text-gray-400 hover:text-red-400 bg-dark-700 rounded-lg transition-all">
+            <i class="fas fa-trash text-xs"></i>
+          </button>
+        </form>
+      </div>
+
+      <form method="POST" class="space-y-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update">
+        <input type="hidden" name="pk" value="{{ pm.pk }}">
+
+        <div>
+          <label class="block text-gray-400 text-xs mb-1">Instructions pour le client</label>
+          <textarea name="instructions" rows="2"
+            class="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-xs focus:border-yellow-500 focus:outline-none resize-none">{{ pm.instructions }}</textarea>
+        </div>
+        {% if pm.method_type != 'livraison' %}
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-gray-400 text-xs mb-1">Banque</label>
+            <input type="text" name="bank_name" value="{{ pm.bank_name }}"
+              class="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-xs focus:border-yellow-500 focus:outline-none"
+              placeholder="CIH, Attijariwafa...">
+          </div>
+          <div>
+            <label class="block text-gray-400 text-xs mb-1">RIB / N° Compte</label>
+            <input type="text" name="account_number" value="{{ pm.account_number }}"
+              class="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-xs focus:border-yellow-500 focus:outline-none font-mono"
+              placeholder="007 780 0000000000 00">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-gray-400 text-xs mb-1">Titulaire du compte</label>
+            <input type="text" name="account_name" value="{{ pm.account_name }}"
+              class="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white text-xs focus:border-yellow-500 focus:outline-none"
+              placeholder="Venice Autocars SARL">
+          </div>
+        </div>
+        {% endif %}
+        <div class="flex items-center justify-between">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="is_active" {% if pm.is_active %}checked{% endif %} class="w-4 h-4 accent-yellow-500">
+            <span class="text-gray-300 text-xs">Activée</span>
+          </label>
+          <button type="submit" class="px-4 py-1.5 rounded-lg text-xs font-bold text-gray-900"
+            style="background: linear-gradient(135deg, #D4AF37, #C9A227);">
+            <i class="fas fa-save mr-1"></i>Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+    {% empty %}
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-8 text-center text-gray-500">
+      <i class="fas fa-credit-card text-4xl mb-3 opacity-30 block"></i>
+      Aucune méthode configurée. Ajoutez-en une ci-contre.
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Ajouter une méthode -->
+  <div>
+    <h3 class="text-white font-bold mb-4">Ajouter une méthode</h3>
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+      <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create">
+
+        <div>
+          <label class="block text-gray-400 text-sm mb-2">Type de méthode</label>
+          <select name="method_type" required
+            class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white text-sm focus:border-yellow-500 focus:outline-none">
+            <option value="">-- Choisir --</option>
+            <option value="virement">Virement bancaire</option>
+            <option value="versement">Versement bancaire (dépôt agence)</option>
+            <option value="livraison">Paiement à la livraison</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-400 text-sm mb-2">Instructions pour le client</label>
+          <textarea name="instructions" rows="3" required
+            class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white text-sm focus:border-yellow-500 focus:outline-none resize-none"
+            placeholder="Ex: Effectuez un virement sur le compte ci-dessous et envoyez le reçu..."></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-gray-400 text-sm mb-2">Banque</label>
+            <input type="text" name="bank_name"
+              class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white text-sm focus:border-yellow-500 focus:outline-none"
+              placeholder="Attijariwafa Bank">
+          </div>
+          <div>
+            <label class="block text-gray-400 text-sm mb-2">RIB</label>
+            <input type="text" name="account_number"
+              class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white text-sm focus:border-yellow-500 focus:outline-none font-mono"
+              placeholder="007 780 ...">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-gray-400 text-sm mb-2">Titulaire</label>
+            <input type="text" name="account_name"
+              class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white text-sm focus:border-yellow-500 focus:outline-none"
+              placeholder="Venice Autocars SARL">
+          </div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="is_active" checked class="w-4 h-4 accent-yellow-500">
+          <span class="text-gray-300 text-sm">Activer immédiatement</span>
+        </label>
+        <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-gray-900"
+          style="background: linear-gradient(135deg, #D4AF37, #C9A227);">
+          <i class="fas fa-plus mr-2"></i>Ajouter la méthode
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

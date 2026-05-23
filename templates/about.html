@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}À Propos - Venice Autocars{% endblock %}
+
+{% block content %}
+<!-- Hero avec image de fond -->
+<section class="relative py-28 overflow-hidden">
+  <img src="{% static "images/gallery_main.jpg" %}"
+    alt="Venice Autocars" class="absolute inset-0 w-full h-full object-cover object-center">
+  <div class="absolute inset-0 bg-gradient-to-r from-dark-900/95 via-dark-900/80 to-dark-900/50"></div>
+  <div class="max-w-7xl mx-auto px-4 text-center relative z-10">
+    <h1 class="text-5xl font-black text-white mb-4">À Propos de <span class="text-gold-400">Venice Autocars</span></h1>
+    <p class="text-gray-300 text-lg max-w-2xl mx-auto">Votre partenaire de confiance pour la location de voitures premium à Casablanca depuis 2010.</p>
+  </div>
+</section>
+
+<section class="py-20 max-w-7xl mx-auto px-4">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
+    <div>
+      <div class="inline-flex items-center px-4 py-2 bg-gold-400/10 border border-gold-400/30 rounded-full text-gold-400 text-sm font-medium mb-6">
+        <i class="fas fa-history mr-2"></i>Notre histoire
+      </div>
+      <h2 class="text-3xl font-black text-white mb-4">14 ans d'excellence dans la location automobile</h2>
+      <p class="text-gray-400 leading-relaxed mb-4">
+        Fondée en 2010, Venice Autocars est née d'une passion pour l'automobile et d'une vision claire : offrir une expérience de location premium accessible à tous.
+      </p>
+      <p class="text-gray-400 leading-relaxed mb-6">
+        Aujourd'hui, nous gérons une flotte de plus de 50 véhicules soigneusement sélectionnés et entretenus, allant des berlines confortables aux SUV spacieux, en passant par des véhicules sportifs pour les amateurs de sensations.
+      </p>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="text-center p-4 bg-dark-800 rounded-xl border border-gray-800">
+          <div class="text-gold-400 font-black text-2xl">50+</div>
+          <div class="text-gray-400 text-xs mt-1">Véhicules</div>
+        </div>
+        <div class="text-center p-4 bg-dark-800 rounded-xl border border-gray-800">
+          <div class="text-gold-400 font-black text-2xl">5000+</div>
+          <div class="text-gray-400 text-xs mt-1">Clients</div>
+        </div>
+        <div class="text-center p-4 bg-dark-800 rounded-xl border border-gray-800">
+          <div class="text-gold-400 font-black text-2xl">14</div>
+          <div class="text-gray-400 text-xs mt-1">Ans d'expérience</div>
+        </div>
+      </div>
+    </div>
+    <div class="bg-dark-800 rounded-3xl border border-gray-800 overflow-hidden">
+      <img src="{% static "images/banner_car.jpg" %}"
+        alt="Venice Autocars Casablanca" class="w-full h-52 object-cover">
+      <div class="p-6 text-center">
+        <i class="fas fa-car text-gold-400 text-3xl mb-3 opacity-70"></i>
+        <h3 class="text-white font-bold text-xl">Venice Autocars</h3>
+        <p class="text-gray-400 mt-2">
+          <a href="https://share.google/LWlS5bPzL1MyAsjSI" target="_blank" rel="noopener"
+            class="hover:text-gold-400 transition-colors underline decoration-dotted inline-flex items-center gap-1">
+            <i class="fas fa-map-marker-alt text-gold-400 text-xs"></i>
+            Casablanca, Hay Azhar Bernoussi
+          </a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Valeurs -->
+  <div class="text-center mb-12">
+    <h2 class="text-3xl font-black text-white">Nos <span class="text-gold-400">Valeurs</span></h2>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6 text-center">
+      <div class="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-gem text-dark-900 text-xl"></i>
+      </div>
+      <h3 class="text-white font-bold text-lg mb-2">Excellence</h3>
+      <p class="text-gray-400 text-sm">Chaque véhicule est inspecté et préparé avec soin avant chaque location.</p>
+    </div>
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6 text-center">
+      <div class="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-handshake text-dark-900 text-xl"></i>
+      </div>
+      <h3 class="text-white font-bold text-lg mb-2">Confiance</h3>
+      <p class="text-gray-400 text-sm">Transparence totale sur les prix et les conditions de location.</p>
+    </div>
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6 text-center">
+      <div class="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-heart text-dark-900 text-xl"></i>
+      </div>
+      <h3 class="text-white font-bold text-lg mb-2">Service client</h3>
+      <p class="text-gray-400 text-sm">Une équipe dédiée disponible 7j/7 pour répondre à vos besoins.</p>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="text-center bg-dark-800 rounded-3xl border border-gold-400/20 p-12">
+    <h2 class="text-3xl font-black text-white mb-4">Prêt à nous faire confiance ?</h2>
+    <p class="text-gray-400 mb-6">Rejoignez nos milliers de clients satisfaits.</p>
+    <a href="{% url 'car_list' %}" class="btn-gold px-8 py-4 rounded-xl font-bold inline-block">
+      <i class="fas fa-car mr-2"></i>Voir nos véhicules
+    </a>
+  </div>
+</section>
+{% endblock %}

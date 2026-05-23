@@ -1,0 +1,201 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}Dashboard - Venice Autocars Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Vue d'ensemble de votre activité{% endblock %}
+
+{% block content %}
+
+<!-- ⚠️ ALERTES REÇUS EN ATTENTE DE VÉRIFICATION -->
+{% if receipts_pending %}
+<div class="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-2xl flex items-start gap-4">
+  <div class="w-10 h-10 bg-yellow-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+    <i class="fas fa-file-upload text-yellow-400"></i>
+  </div>
+  <div class="flex-1">
+    <p class="text-white font-bold text-sm mb-1">
+      {{ receipts_pending }} reçu(s) de paiement en attente de vérification
+    </p>
+    <p class="text-gray-400 text-xs mb-3">Des clients ont soumis leur justificatif de paiement. Vérifiez-les pour valider leurs réservations.</p>
+    <div class="flex flex-wrap gap-2">
+      {% for res in receipts_list %}
+      <a href="{% url 'admin_reservation_detail' res.pk %}"
+        class="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/25 rounded-lg text-xs transition-all">
+        <i class="fas fa-paperclip"></i>
+        #{{ res.pk }} — {{ res.client_name }}
+        <span class="text-gray-400">({{ res.get_payment_method_display }})</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <a href="{% url 'admin_reservation_list' %}?payment=receipt"
+    class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold text-dark-900"
+    style="background:linear-gradient(135deg,#D4AF37,#C9A227);">
+    Voir tout
+  </a>
+</div>
+{% endif %}
+
+<!-- Stats cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="stat-card bg-dark-800 rounded-2xl border border-gray-800 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <div class="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center">
+        <i class="fas fa-car text-dark-900 text-sm"></i>
+      </div>
+      <span class="text-green-400 text-xs font-medium">Total</span>
+    </div>
+    <div class="text-3xl font-black text-white">{{ total_cars }}</div>
+    <div class="text-gray-400 text-sm mt-1">Véhicules</div>
+    <div class="text-xs text-gray-500 mt-1">{{ available_cars }} disponibles</div>
+  </div>
+
+  <div class="stat-card bg-dark-800 rounded-2xl border border-gray-800 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <div class="w-10 h-10 bg-blue-500/20 border border-blue-500/30 rounded-xl flex items-center justify-center">
+        <i class="fas fa-calendar-check text-blue-400 text-sm"></i>
+      </div>
+      <span class="text-blue-400 text-xs font-medium">Total</span>
+    </div>
+    <div class="text-3xl font-black text-white">{{ total_reservations }}</div>
+    <div class="text-gray-400 text-sm mt-1">Réservations</div>
+    <div class="text-xs text-gray-500 mt-1">{{ pending_reservations }} en attente</div>
+  </div>
+
+  <div class="stat-card bg-dark-800 rounded-2xl border border-gray-800 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <div class="w-10 h-10 bg-green-500/20 border border-green-500/30 rounded-xl flex items-center justify-center">
+        <i class="fas fa-euro-sign text-green-400 text-sm"></i>
+      </div>
+      <span class="text-green-400 text-xs font-medium">Total</span>
+    </div>
+    <div class="text-3xl font-black text-white">{{ total_revenue|floatformat:0 }}DH</div>
+    <div class="text-gray-400 text-sm mt-1">Revenus totaux</div>
+    <div class="text-xs text-gray-500 mt-1">Confirmées + terminées</div>
+  </div>
+
+  <div class="stat-card bg-dark-800 rounded-2xl border border-gray-800 p-5">
+    <div class="flex items-center justify-between mb-3">
+      <div class="w-10 h-10 bg-purple-500/20 border border-purple-500/30 rounded-xl flex items-center justify-center">
+        <i class="fas fa-chart-line text-purple-400 text-sm"></i>
+      </div>
+      <span class="text-purple-400 text-xs font-medium">Ce mois</span>
+    </div>
+    <div class="text-3xl font-black text-white">{{ monthly_revenue|floatformat:0 }}DH</div>
+    <div class="text-gray-400 text-sm mt-1">Revenus du mois</div>
+    <div class="text-xs text-gray-500 mt-1">{{ confirmed_reservations }} confirmées</div>
+  </div>
+</div>
+
+<!-- Chart + Top cars -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+  <!-- Revenue chart -->
+  <div class="lg:col-span-2 bg-dark-800 rounded-2xl border border-gray-800 p-6">
+    <h3 class="text-white font-bold mb-4">Revenus des 6 derniers mois</h3>
+    <canvas id="revenueChart" height="100"></canvas>
+  </div>
+
+  <!-- Top cars -->
+  <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+    <h3 class="text-white font-bold mb-4">Voitures les plus louées</h3>
+    <div class="space-y-3">
+      {% for car in top_cars %}
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-dark-700 rounded-lg flex items-center justify-center text-xs font-bold text-gold-400">
+            {{ forloop.counter }}
+          </div>
+          <div>
+            <div class="text-white text-sm font-medium">{{ car.brand }} {{ car.model }}</div>
+            <div class="text-gray-500 text-xs">{{ car.year }}</div>
+          </div>
+        </div>
+        <span class="text-gold-400 font-bold text-sm">{{ car.reservation_count }}</span>
+      </div>
+      {% empty %}
+      <p class="text-gray-500 text-sm">Aucune donnée</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Recent reservations -->
+<div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+  <div class="flex items-center justify-between mb-5">
+    <h3 class="text-white font-bold">Réservations récentes</h3>
+    <a href="{% url 'admin_reservation_list' %}" class="text-gold-400 text-sm hover:underline">Voir tout →</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-gray-400 border-b border-gray-700">
+          <th class="text-left pb-3 font-medium">#</th>
+          <th class="text-left pb-3 font-medium">Client</th>
+          <th class="text-left pb-3 font-medium">Véhicule</th>
+          <th class="text-left pb-3 font-medium">Dates</th>
+          <th class="text-left pb-3 font-medium">Total</th>
+          <th class="text-left pb-3 font-medium">Statut</th>
+          <th class="text-left pb-3 font-medium">Action</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800">
+        {% for res in recent_reservations %}
+        <tr class="hover:bg-dark-700/50 transition-colors">
+          <td class="py-3 text-gray-400">#{{ res.pk }}</td>
+          <td class="py-3">
+            <div class="text-white font-medium">{{ res.client_name }}</div>
+            <div class="text-gray-500 text-xs">{{ res.client_email }}</div>
+          </td>
+          <td class="py-3 text-gray-300">{{ res.car.brand }} {{ res.car.model }}</td>
+          <td class="py-3 text-gray-400 text-xs">{{ res.start_date }} → {{ res.end_date }}</td>
+          <td class="py-3 text-gold-400 font-bold">{{ res.total_price }}DH</td>
+          <td class="py-3">
+            <span class="px-2 py-1 rounded-full text-xs font-medium
+              {% if res.status == 'pending' %}bg-yellow-500/20 text-yellow-400
+              {% elif res.status == 'confirmed' %}bg-blue-500/20 text-blue-400
+              {% elif res.status == 'completed' %}bg-green-500/20 text-green-400
+              {% elif res.status == 'cancelled' %}bg-red-500/20 text-red-400
+              {% else %}bg-gray-500/20 text-gray-400{% endif %}">
+              {{ res.get_status_display }}
+            </span>
+          </td>
+          <td class="py-3">
+            <a href="{% url 'admin_reservation_detail' res.pk %}" class="text-gold-400 hover:underline text-xs">Voir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="py-8 text-center text-gray-500">Aucune réservation</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ctx = document.getElementById('revenueChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [{
+      label: 'Revenus (DH)',
+      data: {{ chart_revenue|safe }},
+      backgroundColor: 'rgba(212,175,55,0.3)',
+      borderColor: '#D4AF37',
+      borderWidth: 2,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
+    }
+  }
+});
+</script>
+{% endblock %}

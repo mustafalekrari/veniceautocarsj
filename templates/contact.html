@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Contact - Venice Autocars{% endblock %}
+
+{% block content %}
+<section class="relative py-20 overflow-hidden">
+  <img src="{% static "images/cta_car.jpg" %}"
+    alt="Contact" class="absolute inset-0 w-full h-full object-cover object-center opacity-20">
+  <div class="absolute inset-0 bg-dark-900/80"></div>
+  <div class="max-w-6xl mx-auto px-4 text-center relative z-10">
+    <h1 class="text-4xl font-black text-white">Nous <span class="text-gold-400">Contacter</span></h1>
+    <p class="text-gray-400 mt-3">Notre équipe est disponible pour répondre à toutes vos questions.</p>
+  </div>
+</section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-6xl mx-auto px-4 py-12">
+    <!-- Formulaire -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-8">
+      <h3 class="text-white font-bold text-xl mb-6">Envoyer un message</h3>
+      <form method="POST" class="space-y-4">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-400 text-sm mb-2">Prénom</label>
+            <input type="text" name="first_name" placeholder="Jean"
+              class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+          </div>
+          <div>
+            <label class="block text-gray-400 text-sm mb-2">Nom</label>
+            <input type="text" name="last_name" placeholder="Dupont"
+              class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+          </div>
+        </div>
+        <div>
+          <label class="block text-gray-400 text-sm mb-2">Email</label>
+          <input type="email" name="email" placeholder="mohammed@exemple.ma"
+            class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-gray-400 text-sm mb-2">Téléphone</label>
+          <input type="tel" name="phone" placeholder="+212 6 00 00 00 00"
+            class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+        </div>
+        <div>
+          <label class="block text-gray-400 text-sm mb-2">Sujet</label>
+          <select name="subject" class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+            <option>Demande de réservation</option>
+            <option>Information sur un véhicule</option>
+            <option>Réclamation</option>
+            <option>Autre</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-gray-400 text-sm mb-2">Message</label>
+          <textarea name="message" rows="4" placeholder="Votre message..."
+            class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm resize-none"></textarea>
+        </div>
+        <button type="submit" class="btn-gold w-full py-3 rounded-xl font-bold">
+          <i class="fas fa-paper-plane mr-2"></i>Envoyer le message
+        </button>
+      </form>
+    </div>
+
+    <!-- Infos contact -->
+    <div class="space-y-6">
+      <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+        <h3 class="text-white font-bold text-lg mb-5">Informations de contact</h3>
+        <div class="space-y-4">
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-map-marker-alt text-dark-900"></i>
+            </div>
+            <div>
+              <div class="text-white font-medium">Adresse</div>
+              <div class="text-gray-400 text-sm">
+                <a href="https://share.google/LWlS5bPzL1MyAsjSI" target="_blank" rel="noopener"
+                  class="hover:text-gold-400 transition-colors underline decoration-dotted inline-flex items-center gap-1">
+                  Casablanca, Hay Azhar Bernoussi
+                  <i class="fas fa-external-link-alt text-xs opacity-60"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-phone text-dark-900"></i>
+            </div>
+            <div>
+              <div class="text-white font-medium">Téléphone</div>
+              <div class="text-gray-400 text-sm">+212 5 22 00 00 00</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-envelope text-dark-900"></i>
+            </div>
+            <div>
+              <div class="text-white font-medium">Email</div>
+              <div class="text-gray-400 text-sm">contact@venice-autocars.ma</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center flex-shrink-0">
+              <i class="fas fa-clock text-dark-900"></i>
+            </div>
+            <div>
+              <div class="text-white font-medium">Horaires</div>
+              <div class="text-gray-400 text-sm">Lundi - Samedi : 8h00 - 20h00<br>Dimanche : 9h00 - 17h00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+        <h3 class="text-white font-bold text-lg mb-4">Réponse rapide</h3>
+        <p class="text-gray-400 text-sm mb-4">Pour une réponse immédiate, contactez-nous directement :</p>
+        <a href="https://wa.me/33123456789" class="flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl p-4 hover:bg-green-500/20 transition-all">
+          <i class="fab fa-whatsapp text-green-400 text-2xl"></i>
+          <div>
+            <div class="text-white font-medium text-sm">WhatsApp</div>
+            <div class="text-gray-400 text-xs">Réponse en moins de 30 min</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

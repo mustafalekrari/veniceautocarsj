@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin - Venice Autocars{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { 400: '#D4AF37', 500: '#C9A227', 600: '#B8941F' },
+            dark: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a2e', 600: '#16213e' }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .gold-gradient { background: linear-gradient(135deg, #D4AF37, #C9A227); }
+    .sidebar-link { transition: all 0.2s; border-left: 3px solid transparent; }
+    .sidebar-link:hover, .sidebar-link.active { background: rgba(212,175,55,0.1); border-left-color: #D4AF37; color: #D4AF37; }
+    .stat-card { transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-3px); }
+  </style>
+</head>
+<body class="bg-gray-950 text-white flex h-screen overflow-hidden">
+
+<!-- SIDEBAR -->
+<aside id="sidebar" class="w-64 bg-dark-800 border-r border-gray-800 flex flex-col flex-shrink-0 h-full overflow-y-auto">
+  <!-- Logo -->
+  <div class="p-4 border-b border-gray-800 flex items-center justify-center">
+    <a href="{% url 'admin_dashboard' %}">
+      <img src="/static/images/logo.jpg" alt="Venice Autocars"
+        style="height:52px;width:auto;border-radius:8px;">
+    </a>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 p-4 space-y-1">
+    <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider px-3 mb-3">Principal</p>
+    <a href="{% url 'admin_dashboard' %}" class="sidebar-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %} flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm">
+      <i class="fas fa-tachometer-alt w-4"></i>Dashboard
+    </a>
+
+    <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider px-3 mb-3 mt-5">Gestion</p>
+    <a href="{% url 'admin_car_list' %}" class="sidebar-link {% if 'car' in request.resolver_match.url_name %}active{% endif %} flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm">
+      <i class="fas fa-car w-4"></i>Voitures
+    </a>
+    <a href="{% url 'admin_reservation_list' %}" class="sidebar-link {% if 'reservation' in request.resolver_match.url_name %}active{% endif %} flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm">
+      <i class="fas fa-calendar-check w-4"></i>Réservations
+      {% with pending=request.session.receipts_pending %}
+      {% endwith %}
+    </a>
+    <a href="{% url 'admin_client_list' %}" class="sidebar-link {% if 'client' in request.resolver_match.url_name %}active{% endif %} flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm">
+      <i class="fas fa-users w-4"></i>Clients
+    </a>
+    <a href="{% url 'admin_user_list' %}" class="sidebar-link {% if 'user' in request.resolver_match.url_name %}active{% endif %} flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm">
+      <i class="fas fa-user-shield w-4"></i>Utilisateurs
+    </a>
+    <a href="{% url 'admin_payment_methods' %}" class="sidebar-link {% if 'payment' in request.resolver_match.url_name %}active{% endif %} flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm">
+      <i class="fas fa-credit-card w-4"></i>Paiements
+    </a>
+
+    <p class="text-gray-500 text-xs font-semibold uppercase tracking-wider px-3 mb-3 mt-5">Accès</p>
+    <a href="{% url 'home' %}" target="_blank" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm">
+      <i class="fas fa-external-link-alt w-4"></i>Voir le site
+    </a>
+    <a href="{% url 'logout' %}" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-300 text-sm hover:text-red-400">
+      <i class="fas fa-sign-out-alt w-4"></i>Déconnexion
+    </a>
+  </nav>
+
+  <!-- User info -->
+  <div class="p-4 border-t border-gray-800">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 gold-gradient rounded-full flex items-center justify-center text-dark-900 font-bold text-sm">
+        {{ request.user.username|first|upper }}
+      </div>
+      <div>
+        <div class="text-white text-sm font-medium">{{ request.user.username }}</div>
+        <div class="text-gray-500 text-xs">Administrateur</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="flex-1 flex flex-col overflow-hidden">
+  <!-- Top bar -->
+  <header class="bg-dark-800 border-b border-gray-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
+    <div>
+      <h1 class="text-white font-bold text-lg">{% block page_title %}Dashboard{% endblock %}</h1>
+      <p class="text-gray-400 text-xs mt-0.5">{% block page_subtitle %}{% endblock %}</p>
+    </div>
+    <div class="flex items-center gap-3">
+      {% block header_actions %}{% endblock %}
+    </div>
+  </header>
+
+  <!-- Messages -->
+  {% if messages %}
+  <div class="px-6 pt-4 space-y-2">
+    {% for message in messages %}
+    <div class="flex items-center px-4 py-3 rounded-lg text-sm font-medium
+      {% if message.tags == 'success' %}bg-green-500/10 border border-green-500/30 text-green-400
+      {% elif message.tags == 'error' %}bg-red-500/10 border border-red-500/30 text-red-400
+      {% else %}bg-blue-500/10 border border-blue-500/30 text-blue-400{% endif %}">
+      <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Content -->
+  <main class="flex-1 overflow-y-auto p-6">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

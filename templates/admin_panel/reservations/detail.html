@@ -1,0 +1,222 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}Réservation #{{ reservation.pk }} - Admin{% endblock %}
+{% block page_title %}Réservation #{{ reservation.pk }}{% endblock %}
+{% block page_subtitle %}{{ reservation.client_name }} · {{ reservation.car }}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'admin_download_receipt' reservation.pk %}"
+  class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 bg-dark-700 hover:bg-dark-600 border border-gray-700 transition-all">
+  <i class="fas fa-file-pdf text-red-400"></i>Télécharger PDF
+</a>
+<a href="{% url 'admin_reservation_list' %}"
+  class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 bg-dark-700 hover:bg-dark-600 border border-gray-700 transition-all">
+  <i class="fas fa-arrow-left"></i>Retour
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Infos principales -->
+  <div class="lg:col-span-2 space-y-6">
+    <!-- Client -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+      <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-user text-gold-400"></i>Informations client
+      </h3>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div><span class="text-gray-400">Nom :</span> <span class="text-white ml-2">{{ reservation.client_name }}</span></div>
+        <div><span class="text-gray-400">Email :</span> <span class="text-white ml-2">{{ reservation.client_email }}</span></div>
+        <div><span class="text-gray-400">Téléphone :</span> <span class="text-white ml-2">{{ reservation.client_phone }}</span></div>
+        <div><span class="text-gray-400">N° Permis :</span> <span class="text-white ml-2">{{ reservation.client_license|default:"-" }}</span></div>
+        <div class="col-span-2"><span class="text-gray-400">Adresse :</span> <span class="text-white ml-2">{{ reservation.client_address|default:"-" }}</span></div>
+      </div>
+    </div>
+
+    <!-- Véhicule -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+      <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-car text-gold-400"></i>Véhicule loué
+      </h3>
+      <div class="flex items-center gap-4">
+        <div class="w-20 h-16 bg-dark-700 rounded-xl overflow-hidden flex items-center justify-center">
+          {% if reservation.car.image %}
+          <img src="{{ reservation.car.image.url }}" alt="{{ reservation.car.brand }}" class="w-full h-full object-cover">
+          {% else %}
+          <i class="fas fa-car text-gray-600 text-2xl"></i>
+          {% endif %}
+        </div>
+        <div>
+          <div class="text-white font-bold text-lg">{{ reservation.car.brand }} {{ reservation.car.model }}</div>
+          <div class="text-gray-400 text-sm">{{ reservation.car.year }} · {{ reservation.car.get_transmission_display }} · {{ reservation.car.get_fuel_display }}</div>
+          <div class="text-gold-400 font-bold mt-1">{{ reservation.car.price_per_day }}DH/jour</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dates -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+      <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-calendar text-gold-400"></i>Détails de la location
+      </h3>
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div><span class="text-gray-400">Début :</span> <span class="text-white ml-2">{{ reservation.start_date }}</span></div>
+        <div><span class="text-gray-400">Fin :</span> <span class="text-white ml-2">{{ reservation.end_date }}</span></div>
+        <div><span class="text-gray-400">Durée :</span> <span class="text-white ml-2">{{ reservation.total_days }} jour(s)</span></div>
+        <div><span class="text-gray-400">Créée le :</span> <span class="text-white ml-2">{{ reservation.created_at|date:"d/m/Y H:i" }}</span></div>
+        <div><span class="text-gray-400">Prise en charge :</span> <span class="text-white ml-2">{{ reservation.pickup_location }}</span></div>
+        <div><span class="text-gray-400">Retour :</span> <span class="text-white ml-2">{{ reservation.return_location }}</span></div>
+      </div>
+      {% if reservation.notes %}
+      <div class="mt-4 pt-4 border-t border-gray-700">
+        <span class="text-gray-400 text-sm">Notes :</span>
+        <p class="text-white text-sm mt-1">{{ reservation.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Paiement -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+      <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-credit-card text-gold-400"></i>Informations de paiement
+      </h3>
+      <div class="space-y-3 text-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-gray-400">Méthode</span>
+          {% if reservation.payment_method == 'virement' %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/15 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-medium">
+            <i class="fas fa-university"></i>Virement bancaire
+          </span>
+          {% elif reservation.payment_method == 'versement' %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/15 border border-green-500/30 text-green-400 rounded-lg text-xs font-medium">
+            <i class="fas fa-money-bill-wave"></i>Versement bancaire
+          </span>
+          {% elif reservation.payment_method == 'livraison' %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/15 border border-purple-500/30 text-purple-400 rounded-lg text-xs font-medium">
+            <i class="fas fa-handshake"></i>Paiement à la livraison
+          </span>
+          {% else %}
+          <span class="text-gray-500">—</span>
+          {% endif %}
+        </div>
+
+        {% if reservation.payment_deadline and reservation.payment_method != 'livraison' %}
+        <div class="flex items-center justify-between">
+          <span class="text-gray-400">Date limite paiement</span>
+          <span class="text-red-400 font-medium text-xs">{{ reservation.payment_deadline|date:"d/m/Y H:i" }}</span>
+        </div>
+        {% endif %}
+
+        {% if reservation.payment_submitted_at %}
+        <div class="flex items-center justify-between">
+          <span class="text-gray-400">Reçu soumis le</span>
+          <span class="text-white text-xs">{{ reservation.payment_submitted_at|date:"d/m/Y H:i" }}</span>
+        </div>
+        {% endif %}
+
+        {% if reservation.payment_notes %}
+        <div class="pt-2 border-t border-gray-700">
+          <span class="text-gray-400 text-xs">Note client :</span>
+          <p class="text-white text-xs mt-1">{{ reservation.payment_notes }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- fin col gauche -->
+
+  <!-- Sidebar: statut + total -->
+  <div class="space-y-6">
+    <!-- Total -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+      <h3 class="text-white font-bold mb-4">Facturation</h3>
+      <div class="space-y-2 text-sm mb-4">
+        <div class="flex justify-between text-gray-400">
+          <span>Prix/jour</span><span class="text-white">{{ reservation.car.price_per_day }}DH</span>
+        </div>
+        <div class="flex justify-between text-gray-400">
+          <span>Nombre de jours</span><span class="text-white">{{ reservation.total_days }}</span>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 pt-3 flex justify-between">
+        <span class="text-white font-bold">Total</span>
+        <span class="text-gold-400 font-black text-2xl">{{ reservation.total_price }}DH</span>
+      </div>
+    </div>
+
+    <!-- Changer statut -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6">
+      <h3 class="text-white font-bold mb-4">Statut actuel</h3>
+      <div class="mb-4">
+        <span class="px-3 py-2 rounded-xl text-sm font-medium
+          {% if reservation.status == 'pending' %}bg-yellow-500/20 text-yellow-400
+          {% elif reservation.status == 'confirmed' %}bg-blue-500/20 text-blue-400
+          {% elif reservation.status == 'active' %}bg-purple-500/20 text-purple-400
+          {% elif reservation.status == 'completed' %}bg-green-500/20 text-green-400
+          {% elif reservation.status == 'cancelled' %}bg-red-500/20 text-red-400{% endif %}">
+          {{ reservation.get_status_display }}
+        </span>
+      </div>
+      <form method="POST">
+        {% csrf_token %}
+        <label class="block text-gray-400 text-sm mb-2">Changer le statut</label>
+        <select name="status" class="w-full px-3 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white text-sm focus:border-yellow-500 focus:outline-none mb-3">
+          <option value="pending" {% if reservation.status == 'pending' %}selected{% endif %}>En attente</option>
+          <option value="confirmed" {% if reservation.status == 'confirmed' %}selected{% endif %}>Confirmée</option>
+          <option value="active" {% if reservation.status == 'active' %}selected{% endif %}>En cours</option>
+          <option value="completed" {% if reservation.status == 'completed' %}selected{% endif %}>Terminée</option>
+          <option value="cancelled" {% if reservation.status == 'cancelled' %}selected{% endif %}>Annulée</option>
+        </select>
+        <button type="submit" class="w-full py-2.5 rounded-xl font-bold text-sm text-gray-900"
+          style="background: linear-gradient(135deg, #D4AF37, #C9A227);">
+          <i class="fas fa-save mr-2"></i>Mettre à jour
+        </button>
+      </form>
+    </div>
+
+    <!-- Reçu de paiement -->
+    {% if reservation.payment_receipt %}
+    <div class="bg-dark-800 rounded-2xl border border-yellow-500/30 p-6 space-y-3">
+      <h3 class="text-white font-bold flex items-center gap-2">
+        <i class="fas fa-receipt text-gold-400"></i>Reçu de paiement soumis
+      </h3>
+      <p class="text-gray-400 text-xs">Soumis le : {{ reservation.payment_submitted_at|date:"d/m/Y H:i"|default:"-" }}</p>
+      <a href="{{ reservation.payment_receipt.url }}" target="_blank"
+        class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/20 transition-all">
+        <i class="fas fa-eye"></i>Voir le reçu
+      </a>
+      {% if reservation.status == 'payment_submitted' %}
+      <div class="grid grid-cols-2 gap-2">
+        <form method="POST" action="{% url 'admin_verify_payment' reservation.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="verify">
+          <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-bold bg-green-500 hover:bg-green-600 text-white transition-all">
+            <i class="fas fa-check mr-1"></i>Valider
+          </button>
+        </form>
+        <form method="POST" action="{% url 'admin_verify_payment' reservation.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-bold bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-all">
+            <i class="fas fa-times mr-1"></i>Rejeter
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="bg-dark-800 rounded-2xl border border-gray-800 p-6 space-y-3">
+      <a href="{% url 'admin_download_receipt' reservation.pk %}"
+        class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 transition-all">
+        <i class="fas fa-file-pdf"></i>Télécharger le reçu PDF
+      </a>
+      <a href="{% url 'admin_reservation_delete' reservation.pk %}"
+        class="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-all">
+        <i class="fas fa-trash"></i>Supprimer la réservation
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

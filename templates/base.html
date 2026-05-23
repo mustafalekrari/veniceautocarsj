@@ -1,0 +1,194 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Venice Autocars{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { 400: '#D4AF37', 500: '#C9A227', 600: '#B8941F' },
+            dark: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a2e', 600: '#16213e' }
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .gold-gradient { background: linear-gradient(135deg, #D4AF37, #C9A227); }
+    .hero-gradient { background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%); }
+    .card-hover { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(212,175,55,0.15); }
+    .nav-link { position: relative; }
+    .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#D4AF37; transition:width 0.3s; }
+    .nav-link:hover::after { width:100%; }
+    .btn-gold { background: linear-gradient(135deg, #D4AF37, #C9A227); color: #0a0a0f; font-weight: 700; transition: all 0.3s; }
+    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(212,175,55,0.4); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #12121a; }
+    ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 3px; }
+    .logo-img { height: 48px; width: auto; object-fit: contain; border-radius: 8px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-dark-900 text-white">
+
+<!-- NAVBAR -->
+<nav class="fixed top-0 w-full z-50 bg-dark-800/95 backdrop-blur-md border-b border-gray-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo -->
+      <a href="{% url 'home' %}" class="flex items-center">
+        <img src="{% static 'images/logo.jpg' %}" alt="Venice Autocars" class="logo-img">
+      </a>
+
+      <!-- Nav links desktop -->
+      <div class="hidden md:flex items-center space-x-8">
+        <a href="{% url 'home' %}" class="nav-link text-gray-300 hover:text-white text-sm font-medium transition-colors">Accueil</a>
+        <a href="{% url 'car_list' %}" class="nav-link text-gray-300 hover:text-white text-sm font-medium transition-colors">Nos Voitures</a>
+        <a href="{% url 'about' %}" class="nav-link text-gray-300 hover:text-white text-sm font-medium transition-colors">À Propos</a>
+        <a href="{% url 'contact' %}" class="nav-link text-gray-300 hover:text-white text-sm font-medium transition-colors">Contact</a>
+      </div>
+
+      <!-- CTA + Auth -->
+      <div class="flex items-center space-x-2">
+        {% if user.is_authenticated %}
+          {% if user.is_staff or user.profile.role == 'admin' %}
+          <a href="{% url 'admin_dashboard' %}" class="hidden md:flex items-center gap-1 px-4 py-2 bg-gold-400/10 border border-gold-400/30 text-gold-400 rounded-lg text-sm font-medium hover:bg-gold-400/20 transition-all">
+            <i class="fas fa-tachometer-alt"></i><span class="hidden lg:inline ml-1">Admin</span>
+          </a>
+          {% else %}
+          <a href="{% url 'client_dashboard' %}" class="hidden md:flex items-center gap-1 px-4 py-2 bg-dark-700 border border-gray-700 text-gray-300 rounded-lg text-sm hover:border-gold-400 hover:text-white transition-all">
+            <i class="fas fa-user text-gold-400"></i><span class="hidden lg:inline ml-1">Mon espace</span>
+          </a>
+          {% endif %}
+          <a href="{% url 'logout' %}" class="hidden md:flex items-center gap-1 px-4 py-2 bg-dark-700 border border-gray-700 text-gray-400 rounded-lg text-sm hover:text-red-400 hover:border-red-400/50 transition-all">
+            <i class="fas fa-sign-out-alt"></i>
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="hidden md:block px-4 py-2 border border-gray-600 hover:border-gold-400 text-gray-300 hover:text-white rounded-lg text-sm transition-all">
+            Connexion
+          </a>
+          <a href="{% url 'register' %}" class="btn-gold px-4 py-2 rounded-lg text-sm hidden md:block">
+            <i class="fas fa-user-plus mr-1"></i>S'inscrire
+          </a>
+        {% endif %}
+        <button id="mobile-menu-btn" class="md:hidden text-gray-300 hover:text-white">
+          <i class="fas fa-bars text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden md:hidden bg-dark-800 border-t border-gray-800 px-4 py-4 space-y-3">
+    <a href="{% url 'home' %}" class="block text-gray-300 hover:text-gold-400 py-2">Accueil</a>
+    <a href="{% url 'car_list' %}" class="block text-gray-300 hover:text-gold-400 py-2">Nos Voitures</a>
+    <a href="{% url 'about' %}" class="block text-gray-300 hover:text-gold-400 py-2">À Propos</a>
+    <a href="{% url 'contact' %}" class="block text-gray-300 hover:text-gold-400 py-2">Contact</a>
+    {% if user.is_authenticated %}
+      {% if user.is_staff %}
+      <a href="{% url 'admin_dashboard' %}" class="block text-gold-400 py-2"><i class="fas fa-tachometer-alt mr-1"></i>Dashboard Admin</a>
+      {% else %}
+      <a href="{% url 'client_dashboard' %}" class="block text-gray-300 hover:text-gold-400 py-2"><i class="fas fa-user mr-1"></i>Mon espace</a>
+      {% endif %}
+      <a href="{% url 'logout' %}" class="block text-red-400 py-2"><i class="fas fa-sign-out-alt mr-1"></i>Déconnexion</a>
+    {% else %}
+      <a href="{% url 'login' %}" class="block text-gray-300 hover:text-gold-400 py-2">Connexion</a>
+      <a href="{% url 'register' %}" class="btn-gold block text-center px-5 py-2 rounded-lg text-sm">S'inscrire</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- Messages -->
+{% if messages %}
+<div class="fixed top-20 right-4 z-50 space-y-2" id="messages-container">
+  {% for message in messages %}
+  <div class="flex items-center px-5 py-3 rounded-lg shadow-lg text-sm font-medium
+    {% if message.tags == 'success' %}bg-green-500 text-white
+    {% elif message.tags == 'error' %}bg-red-500 text-white
+    {% else %}bg-blue-500 text-white{% endif %}">
+    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} mr-2"></i>
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+<script>setTimeout(() => { const el = document.getElementById('messages-container'); if(el) el.style.display='none'; }, 4000);</script>
+{% endif %}
+
+<!-- CONTENT -->
+<main class="pt-16">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- FOOTER -->
+<footer class="bg-dark-800 border-t border-gray-800 mt-20">
+  <div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div class="col-span-1 md:col-span-2">
+        <a href="{% url 'home' %}" class="inline-block mb-4">
+          <img src="{% static 'images/logo.jpg' %}" alt="Venice Autocars" style="height:50px;width:auto;object-fit:contain;">
+        </a>
+        <p class="text-gray-400 text-sm leading-relaxed max-w-sm">
+          Votre partenaire de confiance pour la location de voitures premium. Qualité, confort et service irréprochable depuis 2010.
+        </p>
+        <div class="flex space-x-4 mt-4">
+          <a href="#" class="w-9 h-9 bg-gray-700 hover:bg-gold-500 rounded-full flex items-center justify-center transition-colors">
+            <i class="fab fa-facebook-f text-sm"></i>
+          </a>
+          <a href="#" class="w-9 h-9 bg-gray-700 hover:bg-gold-500 rounded-full flex items-center justify-center transition-colors">
+            <i class="fab fa-instagram text-sm"></i>
+          </a>
+          <a href="#" class="w-9 h-9 bg-gray-700 hover:bg-gold-500 rounded-full flex items-center justify-center transition-colors">
+            <i class="fab fa-whatsapp text-sm"></i>
+          </a>
+        </div>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold mb-4">Navigation</h4>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <li><a href="{% url 'home' %}" class="hover:text-gold-400 transition-colors">Accueil</a></li>
+          <li><a href="{% url 'car_list' %}" class="hover:text-gold-400 transition-colors">Nos Voitures</a></li>
+          <li><a href="{% url 'about' %}" class="hover:text-gold-400 transition-colors">À Propos</a></li>
+          <li><a href="{% url 'contact' %}" class="hover:text-gold-400 transition-colors">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold mb-4">Contact</h4>
+        <ul class="space-y-2 text-sm text-gray-400">
+          <li>
+            <i class="fas fa-map-marker-alt text-gold-400 mr-2"></i>
+            <a href="https://share.google/LWlS5bPzL1MyAsjSI" target="_blank" rel="noopener"
+              class="hover:text-gold-400 transition-colors underline decoration-dotted">
+              Casablanca, Hay Azhar Bernoussi
+            </a>
+          </li>
+          <li><i class="fas fa-phone text-gold-400 mr-2"></i>+212 5 22 00 00 00</li>
+          <li><i class="fas fa-envelope text-gold-400 mr-2"></i>contact@venice-autocars.ma</li>
+          <li><i class="fas fa-clock text-gold-400 mr-2"></i>Lun-Sam: 8h-20h</li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-gray-800 mt-8 pt-6 text-center text-sm text-gray-500">
+      © 2024 Venice Autocars. Tous droits réservés.
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+  });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

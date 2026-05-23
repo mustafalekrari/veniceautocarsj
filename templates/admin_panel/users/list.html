@@ -1,0 +1,98 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block title %}Utilisateurs - Admin{% endblock %}
+{% block page_title %}Gestion des Utilisateurs{% endblock %}
+{% block page_subtitle %}{{ profiles|length }} utilisateur(s) enregistré(s){% endblock %}
+
+{% block content %}
+<div class="bg-dark-800 rounded-2xl border border-gray-800 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-dark-700">
+        <tr class="text-gray-400 text-left">
+          <th class="px-5 py-4 font-medium">Utilisateur</th>
+          <th class="px-5 py-4 font-medium">Téléphone</th>
+          <th class="px-5 py-4 font-medium">Ville</th>
+          <th class="px-5 py-4 font-medium">CIN</th>
+          <th class="px-5 py-4 font-medium">Rôle</th>
+          <th class="px-5 py-4 font-medium">Inscrit le</th>
+          <th class="px-5 py-4 font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-800">
+        {% for profile in profiles %}
+        <tr class="hover:bg-dark-700/40 transition-colors">
+          <td class="px-5 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0
+                {% if profile.role == 'admin' %}gold-gradient text-gray-900{% else %}bg-blue-500/20 text-blue-400{% endif %}">
+                {{ profile.user.first_name|first|upper|default:profile.user.username|first|upper }}
+              </div>
+              <div>
+                <div class="text-white font-medium">{{ profile.user.get_full_name|default:profile.user.username }}</div>
+                <div class="text-gray-500 text-xs">{{ profile.user.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-5 py-4 text-gray-300">{{ profile.phone|default:"-" }}</td>
+          <td class="px-5 py-4 text-gray-300">{{ profile.city|default:"-" }}</td>
+          <td class="px-5 py-4 text-gray-300">{{ profile.cin|default:"-" }}</td>
+          <td class="px-5 py-4">
+            <span class="px-2 py-1 rounded-full text-xs font-medium
+              {% if profile.role == 'admin' %}bg-yellow-500/20 text-yellow-400
+              {% else %}bg-blue-500/20 text-blue-400{% endif %}">
+              <i class="fas {% if profile.role == 'admin' %}fa-crown{% else %}fa-user{% endif %} mr-1"></i>
+              {{ profile.get_role_display }}
+            </span>
+          </td>
+          <td class="px-5 py-4 text-gray-400 text-xs">{{ profile.created_at|date:"d/m/Y" }}</td>
+          <td class="px-5 py-4">
+            <div class="flex items-center gap-2">
+              <!-- Changer rôle -->
+              <form method="POST" action="{% url 'admin_user_toggle_role' profile.pk %}" class="inline">
+                {% csrf_token %}
+                {% if profile.role == 'client' %}
+                <input type="hidden" name="role" value="admin">
+                <button type="submit" title="Promouvoir admin"
+                  class="p-2 text-gray-400 hover:text-yellow-400 bg-dark-700 hover:bg-dark-600 rounded-lg transition-all text-xs">
+                  <i class="fas fa-crown"></i>
+                </button>
+                {% else %}
+                <input type="hidden" name="role" value="client">
+                <button type="submit" title="Rétrograder client"
+                  class="p-2 text-gray-400 hover:text-blue-400 bg-dark-700 hover:bg-dark-600 rounded-lg transition-all text-xs"
+                  {% if profile.user == request.user %}disabled{% endif %}>
+                  <i class="fas fa-user"></i>
+                </button>
+                {% endif %}
+              </form>
+              <!-- Voir historique -->
+              <a href="{% url 'admin_client_history' profile.user.email %}"
+                class="p-2 text-gray-400 hover:text-gold-400 bg-dark-700 hover:bg-dark-600 rounded-lg transition-all" title="Historique">
+                <i class="fas fa-history text-xs"></i>
+              </a>
+              <!-- Supprimer -->
+              {% if profile.user != request.user %}
+              <form method="POST" action="{% url 'admin_user_delete' profile.pk %}" class="inline"
+                onsubmit="return confirm('Supprimer {{ profile.user.username }} ?')">
+                {% csrf_token %}
+                <button type="submit" class="p-2 text-gray-400 hover:text-red-400 bg-dark-700 hover:bg-dark-600 rounded-lg transition-all" title="Supprimer">
+                  <i class="fas fa-trash text-xs"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="px-5 py-12 text-center text-gray-500">
+            <i class="fas fa-users text-4xl mb-3 opacity-30 block"></i>
+            Aucun utilisateur enregistré.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

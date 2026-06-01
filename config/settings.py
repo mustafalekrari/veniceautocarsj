@@ -11,6 +11,12 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
+# En production Railway — accepter tous les hosts railway.app
+import os
+RAILWAY_STATIC_URL = os.environ.get('RAILWAY_STATIC_URL', '')
+if RAILWAY_STATIC_URL:
+    ALLOWED_HOSTS = ['*']  # Railway gère la sécurité au niveau réseau
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

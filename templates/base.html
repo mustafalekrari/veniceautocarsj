@@ -4,7 +4,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Venice Autocars{% endblock %}</title>
+
+  <!-- ═══ SEO PRINCIPAL ═══════════════════════════════════════ -->
+  <title>{% block title %}Venice Autocars - Location de Voitures Premium au Maroc{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Venice Autocars - Location de voitures premium à Casablanca, Hay Azhar Bernoussi. Berlines, SUV, sportives. Réservation en ligne, paiement en Dirham marocain.{% endblock %}">
+  <meta name="keywords" content="location voiture Casablanca, Venice Autocars, location voiture Maroc, louer voiture Casablanca, location SUV Maroc, location berline Casablanca">
+  <meta name="author" content="Venice Autocars">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://veniceautocarsj-production-9304.up.railway.app{% block canonical_path %}/{% endblock %}">
+
+  <!-- ═══ OPEN GRAPH (partage réseaux sociaux + Google) ═══════ -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Venice Autocars">
+  <meta property="og:title" content="{% block og_title %}Venice Autocars - Location de Voitures Premium Casablanca{% endblock %}">
+  <meta property="og:description" content="Location de voitures premium à Casablanca. Flotte entretenue, assurance incluse, réservation en ligne 24h/24.">
+  <meta property="og:image" content="{% static 'images/og-image.jpg' %}">
+  <meta property="og:url" content="https://veniceautocarsj-production-9304.up.railway.app">
+  <meta property="og:locale" content="fr_MA">
+
+  <!-- ═══ TWITTER CARD ════════════════════════════════════════ -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Venice Autocars - Location Voitures Casablanca">
+  <meta name="twitter:description" content="Location de voitures premium à Casablanca, Maroc. Réservez en ligne.">
+  <meta name="twitter:image" content="{% static 'images/og-image.jpg' %}">
+
+  <!-- ═══ FAVICON + ICÔNES ════════════════════════════════════ -->
+  <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
+  <meta name="theme-color" content="#D4AF37">
+
+  <!-- ═══ DONNÉES STRUCTURÉES (Google Rich Results) ═══════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CarRental",
+    "name": "Venice Autocars",
+    "description": "Location de voitures premium à Casablanca, Maroc",
+    "url": "https://veniceautocarsj-production-9304.up.railway.app",
+    "logo": "{% static 'images/logo.jpg' %}",
+    "image": "{% static 'images/og-image.jpg' %}",
+    "telephone": "+212-5-22-00-00-00",
+    "email": "contact@venice-autocars.ma",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Hay Azhar Bernoussi",
+      "addressLocality": "Casablanca",
+      "addressCountry": "MA"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "33.5731",
+      "longitude": "-7.5898"
+    },
+    "openingHours": "Mo-Sa 08:00-20:00",
+    "priceRange": "350-4500 MAD/jour",
+    "sameAs": []
+  }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {

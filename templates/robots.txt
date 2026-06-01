@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin-panel/
+Disallow: /auth/
+Disallow: /django-admin/
+
+Sitemap: https://veniceautocarsj-production-9304.up.railway.app/sitemap.xml

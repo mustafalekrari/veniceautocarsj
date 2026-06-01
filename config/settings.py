@@ -7,15 +7,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='venice-autocars-secret-key-change-in-production-2024')
 
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
+ALLOWED_HOSTS = ['*']  # Railway gère la sécurité réseau
 
-# En production Railway — accepter tous les hosts railway.app
-import os
-RAILWAY_STATIC_URL = os.environ.get('RAILWAY_STATIC_URL', '')
-if RAILWAY_STATIC_URL:
-    ALLOWED_HOSTS = ['*']  # Railway gère la sécurité au niveau réseau
+# CSRF — TOUJOURS accepter le domaine Railway
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://veniceautocarsj-production-9304.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',

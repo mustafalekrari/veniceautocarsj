@@ -11,6 +11,10 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']  # Railway gère la sécurité réseau
 
+# Railway utilise un proxy HTTPS — dire à Django de lui faire confiance
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 # CSRF — TOUJOURS accepter le domaine Railway
 CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',

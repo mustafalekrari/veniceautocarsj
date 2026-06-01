@@ -3,3 +3,8 @@ djangorestframework==3.16.1
 django-cors-headers==4.9.0
 pillow
 reportlab
+psycopg2-binary
+dj-database-url
+python-decouple
+gunicorn
+whitenoise

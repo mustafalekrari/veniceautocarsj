@@ -6,116 +6,134 @@
 <style>
   .hero-bg {
     background-image:
-      linear-gradient(to right, rgba(10,10,15,0.97) 0%, rgba(10,10,15,0.85) 50%, rgba(10,10,15,0.4) 100%),
+      linear-gradient(to bottom, rgba(10,10,15,0.92) 0%, rgba(10,10,15,0.75) 60%, rgba(10,10,15,0.95) 100%),
       url('{% static "images/hero_car.jpg" %}');
     background-size: cover;
     background-position: center 40%;
-    background-attachment: fixed;
   }
-  .counter-num { background: linear-gradient(135deg, #D4AF37, #C9A227); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  @media (min-width: 768px) {
+    .hero-bg {
+      background-image:
+        linear-gradient(to right, rgba(10,10,15,0.97) 0%, rgba(10,10,15,0.85) 50%, rgba(10,10,15,0.4) 100%),
+        url('{% static "images/hero_car.jpg" %}');
+      background-attachment: fixed;
+    }
+  }
+  .counter-num {
+    background: linear-gradient(135deg, #D4AF37, #C9A227);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  /* Mobile search compact */
+  @media (max-width: 767px) {
+    .search-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .search-btn-wrap { grid-column: 1 / -1; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- ═══════════════════════════════════════════════════════════════
-     HERO — Image de fond voiture de nuit
-═══════════════════════════════════════════════════════════════ -->
+<!-- ═══ HERO ═══════════════════════════════════════════════════ -->
 <section class="hero-bg min-h-screen flex items-center relative overflow-hidden">
-  <div class="absolute inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-1/3 right-1/4 w-96 h-96 bg-gold-400/5 rounded-full blur-3xl"></div>
-  </div>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 relative z-10 w-full">
-    <div class="max-w-2xl">
-      <div class="inline-flex items-center px-4 py-2 bg-gold-400/10 border border-gold-400/30 rounded-full text-gold-400 text-sm font-medium mb-6">
-        <i class="fas fa-map-marker-alt mr-2"></i>Casablanca, Hay Azhar Bernoussi · Maroc
+  <div class="w-full px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+    <div class="max-w-2xl mx-auto md:mx-0 text-center md:text-left">
+
+      <!-- Badge localisation -->
+      <div class="inline-flex items-center px-3 py-1.5 bg-gold-400/10 border border-gold-400/30 rounded-full text-gold-400 text-xs font-medium mb-5">
+        <i class="fas fa-map-marker-alt mr-1.5"></i>Casablanca, Hay Azhar Bernoussi · Maroc
       </div>
 
-      <h1 class="text-5xl lg:text-7xl font-black text-white leading-tight mb-6">
+      <!-- Titre adaptatif -->
+      <h1 class="text-4xl sm:text-5xl lg:text-7xl font-black text-white leading-tight mb-4">
         Conduisez<br>
-        <span class="text-gold-400">l'Excellence</span><br>
-        <span class="text-3xl lg:text-4xl font-light text-gray-300">au Maroc</span>
+        <span class="text-gold-400">l'Excellence</span>
       </h1>
-
-      <p class="text-gray-300 text-lg leading-relaxed mb-10 max-w-xl">
-        Venice Autocars vous propose une flotte de véhicules premium à Casablanca. Réservez en ligne, payez en <strong class="text-gold-400">Dirham marocain</strong>.
+      <p class="text-gray-300 text-base sm:text-lg leading-relaxed mb-8 max-w-lg mx-auto md:mx-0">
+        Flotte de véhicules premium à Casablanca. Réservez en ligne, payez en <strong class="text-gold-400">Dirham marocain</strong>.
       </p>
 
-      <div class="flex flex-col sm:flex-row gap-4 mb-14">
-        <a href="{% url 'car_list' %}" class="btn-gold px-8 py-4 rounded-xl text-base font-bold text-center shadow-lg shadow-yellow-500/20">
+      <!-- CTA buttons -->
+      <div class="flex flex-col sm:flex-row gap-3 mb-10 max-w-sm mx-auto md:mx-0">
+        <a href="{% url 'car_list' %}" class="btn-gold px-6 py-3.5 rounded-xl text-sm font-bold text-center shadow-lg shadow-yellow-500/20 flex-1">
           <i class="fas fa-car mr-2"></i>Voir nos voitures
         </a>
-        <a href="{% url 'contact' %}" class="px-8 py-4 rounded-xl text-base font-bold border border-white/20 hover:border-gold-400 text-white hover:text-gold-400 transition-all text-center backdrop-blur-sm bg-white/5">
+        <a href="{% url 'contact' %}" class="px-6 py-3.5 rounded-xl text-sm font-bold border border-white/20 text-white transition-all text-center flex-1 bg-white/5">
           <i class="fas fa-phone mr-2"></i>Nous contacter
         </a>
       </div>
 
       <!-- Stats -->
-      <div class="grid grid-cols-3 gap-6 pt-8 border-t border-white/10 max-w-sm">
-        <div>
-          <div class="text-3xl font-black counter-num">{{ total_cars }}+</div>
-          <div class="text-gray-400 text-sm mt-1">Véhicules</div>
+      <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 max-w-xs mx-auto md:mx-0">
+        <div class="text-center md:text-left">
+          <div class="text-2xl sm:text-3xl font-black counter-num">{{ total_cars }}+</div>
+          <div class="text-gray-400 text-xs mt-0.5">Véhicules</div>
         </div>
-        <div>
-          <div class="text-3xl font-black counter-num">{{ available_cars }}</div>
-          <div class="text-gray-400 text-sm mt-1">Disponibles</div>
+        <div class="text-center md:text-left">
+          <div class="text-2xl sm:text-3xl font-black counter-num">{{ available_cars }}</div>
+          <div class="text-gray-400 text-xs mt-0.5">Disponibles</div>
         </div>
-        <div>
-          <div class="text-3xl font-black counter-num">7j/7</div>
-          <div class="text-gray-400 text-sm mt-1">Disponible</div>
+        <div class="text-center md:text-left">
+          <div class="text-2xl sm:text-3xl font-black counter-num">7j/7</div>
+          <div class="text-gray-400 text-xs mt-0.5">Disponible</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Scroll indicator -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-400 animate-bounce">
+  <!-- Scroll indicator — masqué mobile -->
+  <div class="hidden sm:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-1 text-gray-400 animate-bounce">
     <span class="text-xs tracking-widest uppercase">Découvrir</span>
     <i class="fas fa-chevron-down text-gold-400"></i>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     BARRE DE RECHERCHE
-═══════════════════════════════════════════════════════════════ -->
-<section class="bg-dark-800 py-8 border-y border-gray-800 relative z-10 shadow-2xl">
+<!-- ═══ BARRE DE RECHERCHE ══════════════════════════════════════ -->
+<section class="bg-dark-800 py-5 border-y border-gray-800 relative z-10">
   <div class="max-w-5xl mx-auto px-4">
-    <form action="{% url 'car_list' %}" method="GET" class="flex flex-col md:flex-row gap-4 items-end">
-      <div class="flex-1">
-        <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Rechercher</label>
-        <div class="relative">
-          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
-          <input type="text" name="search" placeholder="Marque ou modèle..."
-            class="w-full pl-10 pr-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+    <form action="{% url 'car_list' %}" method="GET">
+      <!-- Mobile : grille 2 colonnes -->
+      <div class="search-grid md:flex md:gap-3 md:items-end">
+        <!-- Recherche -->
+        <div class="md:flex-1">
+          <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1.5">Rechercher</label>
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+            <input type="text" name="search" placeholder="Marque ou modèle..."
+              class="w-full pl-9 pr-3 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+          </div>
+        </div>
+        <!-- Catégorie -->
+        <div class="md:flex-1">
+          <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1.5">Catégorie</label>
+          <select name="category" class="w-full px-3 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+            <option value="">Toutes</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <!-- Disponibilité -->
+        <div>
+          <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1.5">Dispo</label>
+          <select name="available" class="w-full px-3 py-2.5 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
+            <option value="">Toutes</option>
+            <option value="1">Disponibles</option>
+          </select>
+        </div>
+        <!-- Bouton -->
+        <div class="search-btn-wrap md:flex-shrink-0">
+          <button type="submit" class="btn-gold w-full md:w-auto px-6 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap">
+            <i class="fas fa-search mr-1.5"></i>Rechercher
+          </button>
         </div>
       </div>
-      <div class="flex-1">
-        <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Catégorie</label>
-        <select name="category" class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
-          <option value="">Toutes catégories</option>
-          {% for cat in categories %}
-          <option value="{{ cat.id }}">{{ cat.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label class="block text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Disponibilité</label>
-        <select name="available" class="w-full px-4 py-3 bg-dark-700 border border-gray-600 rounded-xl text-white focus:border-gold-400 focus:outline-none text-sm">
-          <option value="">Toutes</option>
-          <option value="1">Disponibles uniquement</option>
-        </select>
-      </div>
-      <button type="submit" class="btn-gold px-8 py-3 rounded-xl font-bold whitespace-nowrap text-sm">
-        <i class="fas fa-search mr-2"></i>Rechercher
-      </button>
     </form>
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     GALERIE AMBIANCE — 3 images premium
-═══════════════════════════════════════════════════════════════ -->
+<!-- ═══ GALERIE AMBIANCE ════════════════════════════════════════ -->
 <section class="py-16 max-w-7xl mx-auto px-4">
   <div class="text-center mb-8">
     <span class="text-gold-400 text-xs font-semibold uppercase tracking-widest">Notre univers</span>
